@@ -1,8 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-
-namespace SWP_BE.Models // Tên namespace giữ nguyên theo project của bạn
+namespace SWP_BE.Models
 {
     public class User
     {
@@ -13,35 +12,38 @@ namespace SWP_BE.Models // Tên namespace giữ nguyên theo project của bạn
             Annotator = 3,
             Reviewer = 4
         }
-        public class Users
-        {
-            public Guid Id { get; set; }
 
-            [Required]
-            public string Username { get; set; } = null!;
+        // ===== PRIMARY KEY =====
+        [Key]
+        public Guid Id { get; set; } = Guid.NewGuid();
 
-            [Required]
-            public string PasswordHash { get; set; } = null!;
-
-            public UserRole Role { get; set; }
-
-            public bool IsActive { get; set; } = true;
-        }
-        public int UserID { get; set; }
+        // ===== BASIC INFO =====
+        [Required]
+        [MaxLength(50)]
+        public string UserName { get; set; } = string.Empty;
 
         [Required]
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public string UserName { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+
+        [MaxLength(100)]
         public string FullName { get; set; } = string.Empty;
-        public UserRole Role { get; set; } = 0;
+
+        [EmailAddress]
         public string Email { get; set; } = string.Empty;
+
         public string? Expertise { get; set; }
-        public int Score { get; set; }
-        public int CurrentTaskCount { get; set; }
+
+        // ===== SYSTEM INFO =====
+        public UserRole Role { get; set; } = UserRole.Annotator;
+
+        public int Score { get; set; } = 0;
+
+        public int CurrentTaskCount { get; set; } = 0;
+
         public bool IsActive { get; set; } = true;
 
-        // --- MỐI QUAN HỆ (NAVIGATION PROPERTIES) ---
+        // ===== RELATIONSHIPS =====
+
         // 1 User làm Manager của nhiều Project
         [InverseProperty("Manager")]
         public ICollection<Project>? ManagedProjects { get; set; }

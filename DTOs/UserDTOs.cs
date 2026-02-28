@@ -26,7 +26,7 @@ namespace SWP_BE.DTOs
     // DTO trả dữ liệu về cho Frontend (Tuyệt đối không có Password)
     public class UserResponseDTO
     {
-        public int UserID { get; set; }
+        public Guid Id { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public UserRole Role { get; set; } = 0;

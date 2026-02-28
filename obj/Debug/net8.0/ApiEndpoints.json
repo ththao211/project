@@ -1,8 +1,29 @@
 [
   {
     "ContainingType": "SWP_BE.Controllers.AdminController",
+    "Method": "ChangeRole",
+    "RelativePath": "api/admin/users/change-role",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": false
+      },
+      {
+        "Name": "newRole",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SWP_BE.Controllers.AdminController",
     "Method": "CreateUser",
-    "RelativePath": "api/admin/users",
+    "RelativePath": "api/admin/users/CREATE USER",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -17,55 +38,8 @@
   },
   {
     "ContainingType": "SWP_BE.Controllers.AdminController",
-    "Method": "GetAllUsers",
-    "RelativePath": "api/admin/users",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "SWP_BE.Controllers.AdminController",
-    "Method": "GetUser",
-    "RelativePath": "api/admin/users/{id}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Guid",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "SWP_BE.Controllers.AdminController",
-    "Method": "UpdateUser",
-    "RelativePath": "api/admin/users/{id}",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Guid",
-        "IsRequired": true
-      },
-      {
-        "Name": "dto",
-        "Type": "SWP_BE.DTOs.UpdateUserDTO",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "SWP_BE.Controllers.AdminController",
     "Method": "DeleteUser",
-    "RelativePath": "api/admin/users/{id}",
+    "RelativePath": "api/admin/users/DELETE-USER/{id}",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -80,8 +54,18 @@
   },
   {
     "ContainingType": "SWP_BE.Controllers.AdminController",
-    "Method": "UpdateUserRole",
-    "RelativePath": "api/admin/users/{id}/role",
+    "Method": "GetAllUsers",
+    "RelativePath": "api/admin/users/Get all User",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SWP_BE.Controllers.AdminController",
+    "Method": "UpdateUser",
+    "RelativePath": "api/admin/users/UPDATE USER INFO",
     "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
@@ -89,14 +73,24 @@
       {
         "Name": "id",
         "Type": "System.Guid",
-        "IsRequired": true
+        "IsRequired": false
       },
       {
         "Name": "dto",
-        "Type": "SWP_BE.DTOs.UpdateRoleDTO",
+        "Type": "SWP_BE.DTOs.UpdateUserDTO",
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "SWP_BE.Controllers.AdminController",
+    "Method": "GetLogs",
+    "RelativePath": "api/admin/users/View logs",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

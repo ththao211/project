@@ -27,6 +27,7 @@ namespace SWP_BE.Data
         public DbSet<SystemConfig> SystemConfigs { get; set; }
         public DbSet<SystemLog> SystemLogs { get; set; }
         public DbSet<ExportHistory> ExportHistories { get; set; }
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,7 +39,13 @@ namespace SWP_BE.Data
             {
                 relationship.DeleteBehavior = DeleteBehavior.Restrict;
             }
+
+            // chặn User bị unActive
+            modelBuilder.Entity<User>()
+                .HasQueryFilter(u => u.IsActive);
         }
+
+        
 
 
     }

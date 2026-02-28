@@ -22,7 +22,7 @@ namespace SWP_BE.Services
             var users = await _userRepo.GetAllUsersAsync();
             return users.Select(u => new UserResponseDTO
             {
-                UserID = u.UserID,
+                Id = u.Id,
                 UserName = u.UserName,
                 FullName = u.FullName,
                 Role = u.Role,
@@ -54,7 +54,7 @@ namespace SWP_BE.Services
 
             await _userRepo.AddUserAsync(newUser);
 
-            return new UserResponseDTO { UserID = newUser.UserID, UserName = newUser.UserName, Email = newUser.Email, Role = newUser.Role, Score = newUser.Score };
+            return new UserResponseDTO { UserName = newUser.UserName, Email = newUser.Email, Role = newUser.Role, Score = newUser.Score };
         }
 
         public async Task<bool> UpdateUserAsync(int id, UserUpdateDTO dto)

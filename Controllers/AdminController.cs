@@ -5,15 +5,15 @@ using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Models;
-using System.Security.Cryptography;
-using System.Text;
+using System.Data;
+using System.Security.Claims;
 using static SWP_BE.Models.User;
 
 namespace SWP_BE.Controllers
 {
     [Route("api/admin/users")]
     [ApiController]
-    [Authorize(Roles = "Admin")] //CHỈ ADMIN
+   
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -23,97 +23,171 @@ namespace SWP_BE.Controllers
             _context = context;
         }
 
+
         // CREATE USER
-        [HttpPost]
-        public async Task<IActionResult> CreateUser(CreateUserDto dto)
+        [Authorize(Roles = "Admin")]
+        [HttpPost("CREATE USER")]
+        public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
             if (await _context.Users.AnyAsync(x => x.UserName == dto.Username))
                 return BadRequest("Username already exists");
+
+            if (await _context.Users.AnyAsync(x => x.Email == dto.Email))
+                return BadRequest("Email already exists");
+            if (!Enum.IsDefined(typeof(UserRole), dto.Role))
+                return BadRequest("Invalid role");
 
             var user = new User
             {
                 Id = Guid.NewGuid(),
                 UserName = dto.Username,
-                Password = HashPassword(dto.Password),
-                Role = dto.Role,     
+               // Password = BCrypt.Net.BCrypt.HashPassword(dto.Password), // HASH PASSWORD
+                Password = dto.Password,
+                FullName = dto.FullName,
+                Email = dto.Email,
+                Expertise = dto.Expertise,
+                Role = dto.Role,
+
+                // DEFAULT VALUES
+                Score = 100,
+                CurrentTaskCount = 0,
                 IsActive = true
             };
 
             _context.Users.Add(user);
+
+            await LogActivity("Create User", user.Id);
+
             await _context.SaveChangesAsync();
 
-            return Ok(user);
+            return Ok(new
+            {
+                message = "User created successfully",
+                userId = user.Id
+            });
         }
-
         // GET ALL USERS
-        [HttpGet]
+        [HttpGet("Get all User")]
         public async Task<IActionResult> GetAllUsers()
         {
-            var users = await _context.Users.ToListAsync();
-            return Ok(users);
-        }
-
-        // GET USER BY ID
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetUser(Guid id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
-
-            return Ok(user);
+            return Ok(await _context.Users.ToListAsync());
         }
 
         // UPDATE USER INFO
-        [HttpPut("{id}")]
+
+        [Authorize]
+        [HttpPut("UPDATE USER INFO")]
         public async Task<IActionResult> UpdateUser(Guid id, UpdateUserDTO dto)
         {
             var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
+            if (user == null)
+                return NotFound();
 
-            if (!string.IsNullOrEmpty(dto.Username))
-                user.UserName = dto.Username;
+            var currentUserName = User.Identity?.Name;
+            var currentRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
-            if (dto.IsActive.HasValue)
-                user.IsActive = dto.IsActive.Value;
+            // Chỉ Admin được quyền chỉnh user khác
+            if (user.UserName != currentUserName && currentRole != "Admin")
+            {
+                return Forbid("You can only update your own account.");
+            }
 
+            // Admin ko thể chỉnh Admin khác
+            if (currentRole == "Admin" && user.Role == UserRole.Admin && user.UserName != currentUserName)
+            {
+                return Forbid("Admin cannot modify another Admin.");
+            }
+
+
+            if (!string.IsNullOrEmpty(dto.UserName))
+                user.UserName = dto.UserName;
+
+            if (!string.IsNullOrEmpty(dto.Password))
+                user.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+            if (!string.IsNullOrEmpty(dto.FullName))
+                user.FullName = dto.FullName;
+
+            if (!string.IsNullOrEmpty(dto.Email))
+                user.Email = dto.Email;
+
+            if (!string.IsNullOrEmpty(dto.Expertise))
+                user.Expertise = dto.Expertise;
+
+            
+
+            await LogActivity("Update User", user.Id);
             await _context.SaveChangesAsync();
 
-            return Ok("User updated");
+            return Ok("User updated successfully");
         }
-        // DELETE USER
-        [HttpDelete("{id}")]
+        
+        // FR-01 DELETE USER 
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("DELETE-USER/{id}")]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
             var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
+            if (user == null)
+                return NotFound("User not found.");
 
-            _context.Users.Remove(user);
+            var currentUserName = User.Identity?.Name;
+
+            // Admin không tự xoá chính mình
+            if (user.UserName == currentUserName)
+                return BadRequest("You cannot delete yourself.");
+
+            // Admin không được xoá Admin khác
+            if (user.Role == SWP_BE.Models.User.UserRole.Admin)
+                return BadRequest("You cannot delete another Admin.");
+
+         
+            user.IsActive = false;
+
+            await LogActivity("Deactivate User", user.Id);
             await _context.SaveChangesAsync();
 
-            return Ok("User deleted");
+            return Ok("User has been deactivated successfully.");
         }
-
-        // UPDATE ROLE (PHÂN ROLE)
-        [HttpPut("{id}/role")]
-   
-        public async Task<IActionResult> UpdateUserRole(Guid id, UpdateRoleDTO dto)
+        //  FR-02 CHANGE ROLE
+        [HttpPut("change-role")]
+        public async Task<IActionResult> ChangeRole(Guid id, UserRole newRole)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
 
-            user.Role = dto.Role;
+            user.Role = newRole;
+
+            await LogActivity("Change Role", user.Id);
 
             await _context.SaveChangesAsync();
 
-            return Ok("Role updated");
+            return Ok("Role Updated");
         }
-        // HASH PASSWORD (Simple SHA256)
-        private string HashPassword(string password)
+        // FR-03 VIEW LOGS
+        [HttpGet("View logs")]
+        public async Task<IActionResult> GetLogs()
         {
-            using var sha256 = SHA256.Create();
-            var bytes = Encoding.UTF8.GetBytes(password);
-            var hash = sha256.ComputeHash(bytes);
-            return Convert.ToBase64String(hash);
+            return Ok(await _context.ActivityLogs
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync());
         }
+        private Task LogActivity(string action, Guid targetUserId)
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            var log = new ActivityLog
+            {
+                Id = Guid.NewGuid(),
+                Action = action,
+                TargetUserId = targetUserId,     
+                PerformedBy = currentUserId != null ? Guid.Parse(currentUserId) : targetUserId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.ActivityLogs.Add(log);
+
+            return Task.CompletedTask;  
+        }
+     }
     }
-}
