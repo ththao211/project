@@ -14,18 +14,30 @@ namespace SWP_BE
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // ===========================================================
+            // 1. [MỚI] CẤU HÌNH CORS
+            // ===========================================================
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
+
             // ===== DB =====
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(
                     builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // ===== Controllers =====
+            // ===== Controllers & Swagger =====
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new() { Title = "SWP-BE", Version = "v1" });
-
                 options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -35,7 +47,6 @@ namespace SWP_BE
                     In = Microsoft.OpenApi.Models.ParameterLocation.Header,
                     Description = "Enter: Bearer {your token}"
                 });
-
                 options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
                 {
                     {
@@ -65,10 +76,8 @@ namespace SWP_BE
                         ValidateAudience = true,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
-
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
                         ValidAudience = builder.Configuration["Jwt:Audience"],
-
                         IssuerSigningKey = new SymmetricSecurityKey(
                             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
                     };
@@ -76,20 +85,41 @@ namespace SWP_BE
 
             var app = builder.Build();
 
-            // ================== CHỖ CẦN SỬA NẰM Ở ĐÂY ==================
-            // Bỏ if (app.Environment.IsDevelopment()) để Swagger chạy trên Azure
+            // ===========================================================
+            // 2. [MỚI] TRẢ VỀ JSON LỖI (401, 404, 405) 
+            // Giúp FE luôn nhận được Object thay vì trang HTML lỗi của trình duyệt
+            // ===========================================================
+            app.UseStatusCodePages(async context =>
+            {
+                context.HttpContext.Response.ContentType = "application/json";
+                var responseObj = new
+                {
+                    message = "Yêu cầu không hợp lệ hoặc bạn không có quyền truy cập",
+                    error = context.HttpContext.Response.StatusCode switch
+                    {
+                        401 => "Unauthorized",
+                        403 => "Forbidden",
+                        404 => "Not Found",
+                        405 => "Method Not Allowed",
+                        _ => "Error"
+                    },
+                    statusCode = context.HttpContext.Response.StatusCode
+                };
+                await context.HttpContext.Response.WriteAsJsonAsync(responseObj);
+            });
+
+            // ===== Swagger Config =====
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1");
-                // Giúp mở link web là vào thẳng Swagger luôn, không cần gõ /swagger
-                options.RoutePrefix = string.Empty;
+                options.RoutePrefix = string.Empty; 
             });
 
-            app.UseStaticFiles(); // Thêm dòng này để load giao diện Swagger tốt hơn
-            // ===========================================================
-
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            app.UseCors("AllowAll");
+
             app.UseAuthentication();
             app.UseAuthorization();
 
