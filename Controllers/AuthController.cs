@@ -6,75 +6,81 @@ using SWP_BE.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using BCrypt.Net; 
 
-[ApiController]
-[Route("api/[controller]")]
-public class AuthController : ControllerBase
+namespace SWP_BE.Controllers
 {
-    private readonly AppDbContext _context;
-    private readonly IConfiguration _configuration;
-
-    public AuthController(AppDbContext context, IConfiguration configuration)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
     {
-        _context = context;
-        _configuration = configuration;
-    }
+        private readonly AppDbContext _context;
+        private readonly IConfiguration _configuration;
 
-    [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginDTO dto)
-    {
-        var user = _context.Users
-            .FirstOrDefault(u => u.UserName == dto.Username);
-
-        if (user == null)
-            return Unauthorized("Username not found");
-
-        if (!VerifyPassword(dto.Password, user.Password))
-            return Unauthorized("Wrong password");
-
-        if (!user.IsActive)
-            return Unauthorized("Account is inactive");
-
-
-        var token = GenerateJwtToken(user);
-
-        return Ok(new
+        public AuthController(AppDbContext context, IConfiguration configuration)
         {
-            token,
-            role = user.Role,
-            userId = user.UserID
-        });
-    }
+            _context = context;
+            _configuration = configuration;
+        }
 
-    private string GenerateJwtToken(User user)
-    {
-        var claims = new[]
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginDTO dto)
         {
-            new Claim("id", user.UserID.ToString()),
-            new Claim(ClaimTypes.Name, user.UserName),
-            new Claim(ClaimTypes.Role, user.Role.ToString())
-        };
+            var user = _context.Users
+                .FirstOrDefault(u => u.UserName == dto.Username);
+            if (user == null)
+                return Unauthorized("Username not found");
+            if (!VerifyPassword(dto.Password, user.Password))
+                return Unauthorized("Wrong password");
+            if (!user.IsActive)
+                return Unauthorized("Account is inactive");
+            var token = GenerateJwtToken(user);
 
-        var key = new SymmetricSecurityKey(
-          Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
-       
+            return Ok(new
+            {
+                token,
+                role = user.Role,
+                userId = user.UserID,
+                username = user.UserName
+            });
+        }
 
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        private string GenerateJwtToken(User user)
+        {
+            var claims = new[]
+            {
+                new Claim("id", user.UserID.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.Role, user.Role.ToString())
+            };
 
-        var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddHours(3),
-            signingCredentials: creds
-        );
+            var jwtKey = _configuration["Jwt:Key"];
+            if (string.IsNullOrEmpty(jwtKey))
+                throw new Exception("JWT Key is missing in configuration!");
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-    private bool VerifyPassword(string inputPassword, string storedPassword)
-    {
-        // Nếu bạn đã hash thì thay bằng logic so sánh hash
-        return inputPassword == storedPassword;
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddHours(3),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private bool VerifyPassword(string inputPassword, string storedPassword)
+        {
+            try
+            {
+                return BCrypt.Net.BCrypt.Verify(inputPassword, storedPassword);
+            }
+            catch
+            {                return inputPassword == storedPassword;
+            }
+        }
     }
 }

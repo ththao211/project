@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -37,19 +37,19 @@ namespace SWP_BE
                 });
 
                 options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
+                    {
+                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                        {
+                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                            {
+                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
             });
 
             builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
@@ -76,16 +76,20 @@ namespace SWP_BE
 
             var app = builder.Build();
 
-            // ===== Swagger =====
-            if (app.Environment.IsDevelopment())
+            // ================== CHỖ CẦN SỬA NẰM Ở ĐÂY ==================
+            // Bỏ if (app.Environment.IsDevelopment()) để Swagger chạy trên Azure
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1");
+                // Giúp mở link web là vào thẳng Swagger luôn, không cần gõ /swagger
+                options.RoutePrefix = string.Empty;
+            });
+
+            app.UseStaticFiles(); // Thêm dòng này để load giao diện Swagger tốt hơn
+            // ===========================================================
 
             app.UseHttpsRedirection();
-
-            
             app.UseAuthentication();
             app.UseAuthorization();
 

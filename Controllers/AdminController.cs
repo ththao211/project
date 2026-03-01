@@ -16,7 +16,7 @@ namespace SWP_BE.Controllers
         public AdminController(AppDbContext context) { _context = context; }
 
         //[Authorize(Roles = "Admin")]
-        [HttpPost("CREATE USER")]
+        [HttpPost("create-user")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
             if (await _context.Users.AnyAsync(x => x.UserName == dto.Username))
@@ -29,7 +29,7 @@ namespace SWP_BE.Controllers
             {
                 UserID = Guid.NewGuid(),
                 UserName = dto.Username,
-                Password = dto.Password, // Lưu ý: Nên Hash password ở đây
+                Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 FullName = dto.FullName,
                 Email = dto.Email,
                 Expertise = dto.Expertise,
@@ -39,21 +39,26 @@ namespace SWP_BE.Controllers
             };
 
             _context.Users.Add(user);
-            await LogActivity("Create User", user.UserID);
+
+            // Tạm thời comment LogActivity nếu bạn chưa đăng nhập (Authorize) 
+            // để tránh lỗi null PerformedBy gây lỗi 500 khi lưu vào DB
+            // await LogActivity("Create User", user.UserID); 
+
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "User created successfully", userId = user.UserID });
         }
 
-        [HttpGet("Get all User")]
+        // 2. Sửa URL: bỏ khoảng trắng
+        [HttpGet("all-users")]
         public async Task<IActionResult> GetAllUsers()
         {
-            // Vì đã bỏ QueryFilter, ta chủ động lọc Active ở đây nếu cần
             return Ok(await _context.Users.Where(u => u.IsActive).ToListAsync());
         }
 
         [Authorize]
-        [HttpPut("UPDATE USER INFO")]
+        // 3. Sửa URL: bỏ khoảng trắng
+        [HttpPut("update-user-info")]
         public async Task<IActionResult> UpdateUser(Guid id, UpdateUserDTO dto)
         {
             var user = await _context.Users.FindAsync(id);
@@ -65,7 +70,6 @@ namespace SWP_BE.Controllers
             if (user.UserName != currentUserName && currentRole != "Admin")
                 return Forbid("You can only update your own account.");
 
-            // Cập nhật các trường thông tin
             if (!string.IsNullOrEmpty(dto.Username)) user.UserName = dto.Username;
             if (!string.IsNullOrEmpty(dto.FullName)) user.FullName = dto.FullName;
             if (!string.IsNullOrEmpty(dto.Email)) user.Email = dto.Email;
@@ -83,7 +87,7 @@ namespace SWP_BE.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpDelete("DELETE-USER/{id}")]
+        [HttpDelete("delete-user/{id}")]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
             var user = await _context.Users.FindAsync(id);
@@ -100,7 +104,6 @@ namespace SWP_BE.Controllers
 
         private Task LogActivity(string action, Guid targetUserId)
         {
-            // Sửa lại để lấy đúng claim "id" đã cài đặt
             var currentUserIdStr = User.FindFirst("id")?.Value;
 
             var log = new ActivityLog
