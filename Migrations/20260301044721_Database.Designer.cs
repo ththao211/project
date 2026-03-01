@@ -12,8 +12,8 @@ using SWP_BE.Data;
 namespace SWP_BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260301032604_FinalFixAndActivityLog")]
-    partial class FinalFixAndActivityLog
+    [Migration("20260301044721_Database")]
+    partial class Database
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

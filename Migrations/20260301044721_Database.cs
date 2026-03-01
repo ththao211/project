@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SWP_BE.Migrations
 {
     /// <inheritdoc />
-    public partial class FinalFixAndActivityLog : Migration
+    public partial class Database : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
