@@ -1,10 +1,10 @@
-﻿using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SWP_BE.Data;
 using SWP_BE.Repositories;
 using SWP_BE.Services;
+using System.Text;
 
 namespace SWP_BE
 {
@@ -37,23 +37,24 @@ namespace SWP_BE
                 });
 
                 options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
                 {
-                    {
-                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-                        {
-                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                            {
-                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
-                        Array.Empty<string>()
-                    }
-                });
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
             });
 
-            builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
-            builder.Services.AddScoped<IProjectService, ProjectService>();
+            // ===== DI =====
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IUserService, UserService>();
 
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -76,20 +77,16 @@ namespace SWP_BE
 
             var app = builder.Build();
 
-            // ================== CHỖ CẦN SỬA NẰM Ở ĐÂY ==================
-            // Bỏ if (app.Environment.IsDevelopment()) để Swagger chạy trên Azure
-            app.UseSwagger();
-            app.UseSwaggerUI(options =>
+            // ===== Swagger =====
+            if (app.Environment.IsDevelopment())
             {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1");
-                // Giúp mở link web là vào thẳng Swagger luôn, không cần gõ /swagger
-                options.RoutePrefix = string.Empty;
-            });
-
-            app.UseStaticFiles(); // Thêm dòng này để load giao diện Swagger tốt hơn
-            // ===========================================================
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
 
             app.UseHttpsRedirection();
+
+
             app.UseAuthentication();
             app.UseAuthorization();
 
