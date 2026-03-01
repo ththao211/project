@@ -47,6 +47,7 @@ namespace SWP_BE.Controllers
                 2 => "Manager",
                 3 => "Annotator",
                 4 => "Reviewer",
+                _ => throw new NotImplementedException(),
             };
 
             var claims = new[]
