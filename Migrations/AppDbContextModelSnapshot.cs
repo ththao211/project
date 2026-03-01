@@ -43,16 +43,18 @@ namespace SWP_BE.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PerformedBy");
+
+                    b.HasIndex("TargetUserId");
+
                     b.ToTable("ActivityLogs");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
                 {
-                    b.Property<int>("DataID")
+                    b.Property<Guid>("DataID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DataID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("FileName")
                         .IsRequired()
@@ -70,8 +72,11 @@ namespace SWP_BE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ProjectID")
-                        .HasColumnType("int");
+                    b.Property<bool>("IsAssigned")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ProjectID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("DataID");
 
@@ -106,8 +111,8 @@ namespace SWP_BE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("TaskID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("TaskID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("DisputeID");
 
@@ -137,8 +142,8 @@ namespace SWP_BE.Migrations
                     b.Property<Guid>("ManagerID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("ProjectID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ProjectID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("ExportID");
 
@@ -176,13 +181,11 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.LabelingTask", b =>
                 {
-                    b.Property<int>("TaskID")
+                    b.Property<Guid>("TaskID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskID"));
-
-                    b.Property<Guid>("AnnotatorID")
+                    b.Property<Guid?>("AnnotatorID")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("CurrentRound")
@@ -191,8 +194,8 @@ namespace SWP_BE.Migrations
                     b.Property<DateTime>("Deadline")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ProjectID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ProjectID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<double>("RateComplete")
                         .HasColumnType("float");
@@ -227,11 +230,9 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.Project", b =>
                 {
-                    b.Property<int>("ProjectID")
+                    b.Property<Guid>("ProjectID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProjectID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -285,8 +286,8 @@ namespace SWP_BE.Migrations
                     b.Property<int>("LabelID")
                         .HasColumnType("int");
 
-                    b.Property<int>("ProjectID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ProjectID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("ProjectLabelID");
 
@@ -315,8 +316,8 @@ namespace SWP_BE.Migrations
                     b.Property<int>("ScoreChange")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TaskID")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("TaskID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("UserID")
                         .HasColumnType("uniqueidentifier");
@@ -384,8 +385,8 @@ namespace SWP_BE.Migrations
                     b.Property<Guid>("ReviewerID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("TaskID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("TaskID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("HistoryID");
 
@@ -455,20 +456,18 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
                 {
-                    b.Property<int>("ItemID")
+                    b.Property<Guid>("ItemID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ItemID"));
-
-                    b.Property<int>("DataID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("DataID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsFlagged")
                         .HasColumnType("bit");
 
-                    b.Property<int>("TaskID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("TaskID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("ItemID");
 
@@ -502,8 +501,8 @@ namespace SWP_BE.Migrations
                     b.Property<bool>("IsApproved")
                         .HasColumnType("bit");
 
-                    b.Property<int>("TaskItemID")
-                        .HasColumnType("int");
+                    b.Property<Guid>("TaskItemID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("IDDetail");
 
@@ -514,7 +513,7 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.User", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("UserID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -530,8 +529,7 @@ namespace SWP_BE.Migrations
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -546,23 +544,39 @@ namespace SWP_BE.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("int");
 
-                    b.Property<int>("UserID")
-                        .HasColumnType("int");
-
                     b.Property<string>("UserName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserID");
+
+                    b.HasIndex("UserName")
+                        .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("SWP_BE.Models.ActivityLog", b =>
+                {
+                    b.HasOne("SWP_BE.Models.User", "Performer")
+                        .WithMany()
+                        .HasForeignKey("PerformedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SWP_BE.Models.User", "TargetUser")
+                        .WithMany()
+                        .HasForeignKey("TargetUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Performer");
+
+                    b.Navigation("TargetUser");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
                 {
                     b.HasOne("SWP_BE.Models.Project", "Project")
-                        .WithMany()
+                        .WithMany("DataItems")
                         .HasForeignKey("ProjectID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -605,8 +619,7 @@ namespace SWP_BE.Migrations
                     b.HasOne("SWP_BE.Models.User", "Annotator")
                         .WithMany("AnnotatorTasks")
                         .HasForeignKey("AnnotatorID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SWP_BE.Models.Project", "Project")
                         .WithMany("Tasks")
@@ -646,7 +659,7 @@ namespace SWP_BE.Migrations
                         .IsRequired();
 
                     b.HasOne("SWP_BE.Models.Project", "Project")
-                        .WithMany()
+                        .WithMany("ProjectLabels")
                         .HasForeignKey("ProjectID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -735,7 +748,7 @@ namespace SWP_BE.Migrations
                         .IsRequired();
 
                     b.HasOne("SWP_BE.Models.LabelingTask", "Task")
-                        .WithMany()
+                        .WithMany("TaskItems")
                         .HasForeignKey("TaskID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -756,8 +769,17 @@ namespace SWP_BE.Migrations
                     b.Navigation("TaskItem");
                 });
 
+            modelBuilder.Entity("SWP_BE.Models.LabelingTask", b =>
+                {
+                    b.Navigation("TaskItems");
+                });
+
             modelBuilder.Entity("SWP_BE.Models.Project", b =>
                 {
+                    b.Navigation("DataItems");
+
+                    b.Navigation("ProjectLabels");
+
                     b.Navigation("Tasks");
                 });
 

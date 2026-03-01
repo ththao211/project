@@ -12,58 +12,32 @@ namespace SWP_BE.Models
             Annotator = 3,
             Reviewer = 4
         }
-        public class Users
-        {
-            public Guid Id { get; set; }
 
-        // ===== PRIMARY KEY =====
         [Key]
-        public Guid Id { get; set; } = Guid.NewGuid();
-
-        // ===== BASIC INFO =====
-            [Required]
-        [MaxLength(50)]
-        public string UserName { get; set; } = string.Empty;
-
-            public UserRole Role { get; set; }
-
-            public bool IsActive { get; set; } = true;
-        }
-        public int UserID { get; set; }
+        public Guid UserID { get; set; } = Guid.NewGuid();
 
         [Required]
-        public Guid Id { get; set; } = Guid.NewGuid();
         public string UserName { get; set; } = string.Empty;
+
+        [Required]
         public string Password { get; set; } = string.Empty;
 
-        [MaxLength(100)]
         public string FullName { get; set; } = string.Empty;
-
-        [EmailAddress]
+        public UserRole Role { get; set; } = 0;
         public string Email { get; set; } = string.Empty;
-
         public string? Expertise { get; set; }
-
-        // ===== SYSTEM INFO =====
-        public UserRole Role { get; set; } = UserRole.Annotator;
-
-        public int Score { get; set; } = 0;
-
-        public int CurrentTaskCount { get; set; } = 0;
-
+        public int Score { get; set; }
+        public int CurrentTaskCount { get; set; }
         public bool IsActive { get; set; } = true;
 
-        // ===== RELATIONSHIPS =====
+        // --- MỐI QUAN HỆ (NAVIGATION PROPERTIES) ---
 
-        // 1 User làm Manager của nhiều Project
         [InverseProperty("Manager")]
         public ICollection<Project>? ManagedProjects { get; set; }
 
-        // 1 User làm Annotator của nhiều Task
         [InverseProperty("Annotator")]
         public ICollection<LabelingTask>? AnnotatorTasks { get; set; }
 
-        // 1 User làm Reviewer của nhiều Task
         [InverseProperty("Reviewer")]
         public ICollection<LabelingTask>? ReviewerTasks { get; set; }
     }

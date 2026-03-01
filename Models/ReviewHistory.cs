@@ -7,18 +7,13 @@ namespace SWP_BE.Models
     {
         [Key]
         public int HistoryID { get; set; }
-
-        public int IDDetail { get; set; } // Liên kết mềm với TaskItemDetail
+        public int IDDetail { get; set; }
         public DateTime ReviewAt { get; set; } = DateTime.Now;
         public string FinalResult { get; set; } = string.Empty;
         public string Field { get; set; } = string.Empty;
-
-        // Trỏ về Task
-        public int TaskID { get; set; }
+        public Guid TaskID { get; set; }
         [ForeignKey("TaskID")]
         public LabelingTask? Task { get; set; }
-
-        // Trỏ về người duyệt (Reviewer)
         public Guid ReviewerID { get; set; }
         [ForeignKey("ReviewerID")]
         public User? Reviewer { get; set; }

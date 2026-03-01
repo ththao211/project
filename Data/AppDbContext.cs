@@ -7,19 +7,14 @@ namespace SWP_BE.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        // --- NHÓM 1: CỐT LÕI ---
         public DbSet<User> Users { get; set; }
         public DbSet<Label> Labels { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<LabelingTask> LabelingTasks { get; set; }
-
-        // --- NHÓM 2: DỮ LIỆU VÀ GẮN NHÃN ---
         public DbSet<ProjectLabel> ProjectLabels { get; set; }
         public DbSet<DataItem> DataItems { get; set; }
         public DbSet<TaskItem> TaskItems { get; set; }
         public DbSet<TaskItemDetail> TaskItemDetails { get; set; }
-
-        // --- NHÓM 3: REVIEW VÀ HỆ THỐNG ---
         public DbSet<ReviewHistory> ReviewHistories { get; set; }
         public DbSet<ReviewComment> ReviewComments { get; set; }
         public DbSet<Dispute> Disputes { get; set; }
@@ -33,20 +28,32 @@ namespace SWP_BE.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Tắt tính năng Xóa dây chuyền (Cascade Delete) cho TOÀN BỘ Database
-            // Giải quyết triệt để lỗi "multiple cascade paths" của SQL Server
+            // 1. Chặn xóa dây chuyền toàn hệ thống
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
             {
                 relationship.DeleteBehavior = DeleteBehavior.Restrict;
             }
 
-            // chặn User bị unActive
+            // --- ĐÃ XÓA HASQUERYFILTER ĐỂ FIX LỖI MỐI QUAN HỆ ---
+
+            // 2. Ràng buộc duy nhất cho UserName
             modelBuilder.Entity<User>()
-                .HasQueryFilter(u => u.IsActive);
+                .HasIndex(u => u.UserName)
+                .IsUnique();
+
+            // 3. Cấu hình ActivityLog
+            modelBuilder.Entity<ActivityLog>(entity =>
+            {
+                entity.HasOne(a => a.Performer)
+                      .WithMany()
+                      .HasForeignKey(a => a.PerformedBy)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(a => a.TargetUser)
+                      .WithMany()
+                      .HasForeignKey(a => a.TargetUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
         }
-
-
-
-
     }
 }

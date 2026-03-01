@@ -12,10 +12,8 @@ namespace SWP_BE.Models
         public string ManagerComment { get; set; } = string.Empty;
         public string Result { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime? ResolvedAt { get; set; } // Có thể chưa giải quyết ngay nên để null (?)
-
-        // Trỏ về Task bị tranh chấp
-        public int TaskID { get; set; }
+        public DateTime? ResolvedAt { get; set; }
+        public Guid TaskID { get; set; }
         [ForeignKey("TaskID")]
         public LabelingTask? Task { get; set; }
     }

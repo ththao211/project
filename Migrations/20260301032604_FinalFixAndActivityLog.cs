@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SWP_BE.Migrations
 {
     /// <inheritdoc />
-    public partial class Database : Migration
+    public partial class FinalFixAndActivityLog : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -30,9 +30,8 @@ namespace SWP_BE.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserID = table.Column<int>(type: "int", nullable: false),
-                    UserName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserName = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Role = table.Column<int>(type: "int", nullable: false),
@@ -44,15 +43,41 @@ namespace SWP_BE.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Users", x => x.Id);
+                    table.PrimaryKey("PK_Users", x => x.UserID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ActivityLogs",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Action = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PerformedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    TargetUserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ActivityLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ActivityLogs_Users_PerformedBy",
+                        column: x => x.PerformedBy,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ActivityLogs_Users_TargetUserId",
+                        column: x => x.TargetUserId,
+                        principalTable: "Users",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Projects",
                 columns: table => new
                 {
-                    ProjectID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProjectID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ProjectName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Topic = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -69,7 +94,7 @@ namespace SWP_BE.Migrations
                         name: "FK_Projects_Users_ManagerID",
                         column: x => x.ManagerID,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserID",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -90,7 +115,7 @@ namespace SWP_BE.Migrations
                         name: "FK_SystemConfigs_Users_AdminID",
                         column: x => x.AdminID,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserID",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -113,7 +138,7 @@ namespace SWP_BE.Migrations
                         name: "FK_SystemLogs_Users_UserID",
                         column: x => x.UserID,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserID",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -121,13 +146,13 @@ namespace SWP_BE.Migrations
                 name: "DataItems",
                 columns: table => new
                 {
-                    DataID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DataID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FileSize = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FileType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ProjectID = table.Column<int>(type: "int", nullable: false)
+                    IsAssigned = table.Column<bool>(type: "bit", nullable: false),
+                    ProjectID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -149,7 +174,7 @@ namespace SWP_BE.Migrations
                     Format = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ItemCount = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ProjectID = table.Column<int>(type: "int", nullable: false),
+                    ProjectID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ManagerID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
@@ -165,7 +190,7 @@ namespace SWP_BE.Migrations
                         name: "FK_ExportHistories_Users_ManagerID",
                         column: x => x.ManagerID,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserID",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -176,7 +201,7 @@ namespace SWP_BE.Migrations
                     ProjectLabelID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CustomName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ProjectID = table.Column<int>(type: "int", nullable: false),
+                    ProjectID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     LabelID = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -200,8 +225,7 @@ namespace SWP_BE.Migrations
                 name: "Tasks",
                 columns: table => new
                 {
-                    TaskID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TaskID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TaskName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     RejectCount = table.Column<int>(type: "int", nullable: false),
@@ -209,8 +233,8 @@ namespace SWP_BE.Migrations
                     Deadline = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CurrentRound = table.Column<int>(type: "int", nullable: false),
                     SubmissionRate = table.Column<double>(type: "float", nullable: false),
-                    ProjectID = table.Column<int>(type: "int", nullable: false),
-                    AnnotatorID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProjectID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AnnotatorID = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ReviewerID = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
@@ -226,13 +250,13 @@ namespace SWP_BE.Migrations
                         name: "FK_Tasks_Users_AnnotatorID",
                         column: x => x.AnnotatorID,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserID",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Tasks_Users_ReviewerID",
                         column: x => x.ReviewerID,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserID",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -247,7 +271,7 @@ namespace SWP_BE.Migrations
                     Result = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ResolvedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    TaskID = table.Column<int>(type: "int", nullable: false)
+                    TaskID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -270,7 +294,7 @@ namespace SWP_BE.Migrations
                     Reason = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UserID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TaskID = table.Column<int>(type: "int", nullable: true)
+                    TaskID = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -285,7 +309,7 @@ namespace SWP_BE.Migrations
                         name: "FK_ReputationLogs_Users_UserID",
                         column: x => x.UserID,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserID",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -299,7 +323,7 @@ namespace SWP_BE.Migrations
                     ReviewAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     FinalResult = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Field = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TaskID = table.Column<int>(type: "int", nullable: false),
+                    TaskID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ReviewerID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
@@ -315,7 +339,7 @@ namespace SWP_BE.Migrations
                         name: "FK_ReviewHistories_Users_ReviewerID",
                         column: x => x.ReviewerID,
                         principalTable: "Users",
-                        principalColumn: "Id",
+                        principalColumn: "UserID",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -323,11 +347,10 @@ namespace SWP_BE.Migrations
                 name: "TaskItems",
                 columns: table => new
                 {
-                    ItemID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ItemID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IsFlagged = table.Column<bool>(type: "bit", nullable: false),
-                    TaskID = table.Column<int>(type: "int", nullable: false),
-                    DataID = table.Column<int>(type: "int", nullable: false)
+                    TaskID = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DataID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -378,7 +401,7 @@ namespace SWP_BE.Migrations
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsApproved = table.Column<bool>(type: "bit", nullable: false),
                     Field = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    TaskItemID = table.Column<int>(type: "int", nullable: false)
+                    TaskItemID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -390,6 +413,16 @@ namespace SWP_BE.Migrations
                         principalColumn: "ItemID",
                         onDelete: ReferentialAction.Restrict);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityLogs_PerformedBy",
+                table: "ActivityLogs",
+                column: "PerformedBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ActivityLogs_TargetUserId",
+                table: "ActivityLogs",
+                column: "TargetUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DataItems_ProjectID",
@@ -490,11 +523,20 @@ namespace SWP_BE.Migrations
                 name: "IX_Tasks_ReviewerID",
                 table: "Tasks",
                 column: "ReviewerID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_UserName",
+                table: "Users",
+                column: "UserName",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ActivityLogs");
+
             migrationBuilder.DropTable(
                 name: "Disputes");
 

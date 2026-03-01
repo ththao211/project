@@ -1,10 +1,10 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SWP_BE.Data;
 using SWP_BE.Repositories;
 using SWP_BE.Services;
-using System.Text;
 
 namespace SWP_BE
 {
@@ -52,9 +52,8 @@ namespace SWP_BE
     });
             });
 
-            // ===== DI =====
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
-            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+            builder.Services.AddScoped<IProjectService, ProjectService>();
 
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

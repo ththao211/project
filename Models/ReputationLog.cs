@@ -7,18 +7,13 @@ namespace SWP_BE.Models
     {
         [Key]
         public int ReputationLogID { get; set; }
-
-        public int ScoreChange { get; set; } // Điểm cộng hoặc trừ
+        public int ScoreChange { get; set; }
         public string Reason { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-
-        // Trỏ về User bị trừ/cộng điểm
         public Guid UserID { get; set; }
         [ForeignKey("UserID")]
         public User? User { get; set; }
-
-        // Liên quan đến Task nào
-        public int? TaskID { get; set; }
+        public Guid? TaskID { get; set; }
         [ForeignKey("TaskID")]
         public LabelingTask? Task { get; set; }
     }

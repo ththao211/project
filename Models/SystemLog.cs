@@ -11,7 +11,6 @@ namespace SWP_BE.Models
         public int TargetID { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public string EntityType { get; set; } = string.Empty;
-
         public Guid UserID { get; set; }
         [ForeignKey("UserID")]
         public User? User { get; set; }

@@ -42,7 +42,7 @@ public class AuthController : ControllerBase
         {
             token,
             role = user.Role,
-            userId = user.Id
+            userId = user.UserID
         });
     }
 
@@ -50,7 +50,7 @@ public class AuthController : ControllerBase
     {
         var claims = new[]
         {
-            new Claim("id", user.Id.ToString()),
+            new Claim("id", user.UserID.ToString()),
             new Claim(ClaimTypes.Name, user.UserName),
             new Claim(ClaimTypes.Role, user.Role.ToString())
         };

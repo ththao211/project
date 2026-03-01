@@ -10,8 +10,7 @@ namespace SWP_BE.Models
         public string Format { get; set; } = string.Empty;
         public int ItemCount { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-
-        public int ProjectID { get; set; }
+        public Guid ProjectID { get; set; }
         [ForeignKey("ProjectID")]
         public Project? Project { get; set; }
 

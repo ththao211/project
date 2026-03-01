@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SWP_BE.Data;
 using SWP_BE.DTOs;
-using SWP_BE.Models;
-using System.Security.Claims;
+using SWP_BE.Services;
 
 namespace SWP_BE.Controllers
 {
@@ -13,134 +10,82 @@ namespace SWP_BE.Controllers
     [Authorize(Roles = "Manager")]
     public class ManagerController : ControllerBase
     {
-        private readonly AppDbContext _context;
-
-        public ManagerController(AppDbContext context)
-        {
-            _context = context;
-        }
+        private readonly IProjectService _projectService;
+        public ManagerController(IProjectService projectService) { _projectService = projectService; }
 
         private Guid GetManagerId()
         {
-            return Guid.Parse(User.FindFirst("id")!.Value);
+            var claim = User.FindFirst("id");
+            if (claim == null) throw new UnauthorizedAccessException("Phiên đăng nhập hết hạn hoặc thiếu ID.");
+            return Guid.Parse(claim.Value);
         }
 
-        // ===============================
-        // GET: api/manager/projects
-        // ===============================
         [HttpGet]
         public async Task<IActionResult> GetProjects()
         {
             var managerId = GetManagerId();
-
-            var projects = await _context.Projects
-                .Where(p => p.ManagerID == managerId)
-                .Select(p => new ProjectResponseDto
-                {
-                    ProjectID = p.ProjectID,
-                    ProjectName = p.ProjectName,
-                    Description = p.Description,
-                    Topic = p.Topic,
-                    ProjectType = p.ProjectType,
-                    Status = p.Status,
-                    CreatedAt = p.CreatedAt,
-                    GuidelineUrl = p.GuidelineUrl
-                })
-                .ToListAsync();
-
-            return Ok(projects);
+            return Ok(await _projectService.GetProjectsAsync(managerId));
         }
 
-        // ===============================
-        // POST: api/manager/projects
-        // ===============================
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProject(Guid id) // int -> Guid
+        {
+            var managerId = GetManagerId();
+            var result = await _projectService.GetProjectByIdAsync(id, managerId);
+            return result == null ? NotFound("Project không tồn tại.") : Ok(result);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateProject(CreateProjectDto dto)
         {
             var managerId = GetManagerId();
-
-            var project = new Project
-            {
-                ProjectName = dto.ProjectName,
-                Description = dto.Description,
-                Topic = dto.Topic,
-                ProjectType = dto.ProjectType,
-                Status = "Open",
-                CreatedAt = DateTime.UtcNow,
-                ManagerID = managerId,
-                GuidelineUrl = ""
-            };
-
-            _context.Projects.Add(project);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Project created successfully" });
+            var projectId = await _projectService.CreateProjectAsync(dto, managerId);
+            return Ok(new { message = "Project created successfully", projectId = projectId });
         }
 
-        // ===============================
-        // PUT: api/manager/projects/{id}
-        // ===============================
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProject(int id, UpdateProjectDto dto)
+        public async Task<IActionResult> UpdateProject(Guid id, UpdateProjectDto dto) // int -> Guid
         {
             var managerId = GetManagerId();
-
-            var project = await _context.Projects
-                .FirstOrDefaultAsync(p => p.ProjectID == id && p.ManagerID == managerId);
-
-            if (project == null)
-                return NotFound("Project not found");
-
-            project.ProjectName = dto.ProjectName;
-            project.Description = dto.Description;
-            project.Topic = dto.Topic;
-            project.ProjectType = dto.ProjectType;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Project updated successfully" });
+            var success = await _projectService.UpdateProjectAsync(id, dto, managerId);
+            return success ? Ok(new { message = "Updated" }) : NotFound();
         }
 
-        // ===============================
-        // PATCH: api/manager/projects/{id}/status
-        // ===============================
         [HttpPatch("{id}/status")]
-        public async Task<IActionResult> ChangeStatus(int id, [FromQuery] string status)
+        public async Task<IActionResult> ChangeStatus(Guid id, [FromQuery] string status) // int -> Guid
         {
             var managerId = GetManagerId();
-
-            var project = await _context.Projects
-                .FirstOrDefaultAsync(p => p.ProjectID == id && p.ManagerID == managerId);
-
-            if (project == null)
-                return NotFound("Project not found");
-
-            project.Status = status;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Status updated successfully" });
+            var success = await _projectService.ChangeStatusAsync(id, status, managerId);
+            return success ? Ok(new { message = "Status updated" }) : NotFound();
         }
 
-        // ===============================
-        // POST: api/manager/projects/{id}/guideline
-        // ===============================
         [HttpPost("{id}/guideline")]
-        public async Task<IActionResult> UpdateGuideline(int id, [FromQuery] string url)
+        public async Task<IActionResult> UpdateGuideline(Guid id, [FromQuery] string url) // int -> Guid
         {
             var managerId = GetManagerId();
+            var success = await _projectService.UpdateGuidelineAsync(id, url, managerId);
+            return success ? Ok(new { message = "Guideline updated" }) : NotFound();
+        }
 
-            var project = await _context.Projects
-                .FirstOrDefaultAsync(p => p.ProjectID == id && p.ManagerID == managerId);
+        [HttpPost("{id}/data")]
+        public async Task<IActionResult> UploadData(Guid id, [FromBody] UploadDataDto dto) // int -> Guid
+        {
+            if (dto.FileUrls == null || !dto.FileUrls.Any()) return BadRequest("Links không được để trống.");
+            var managerId = GetManagerId();
+            var success = await _projectService.UploadDataAsync(id, dto, managerId);
+            return success ? Ok(new { message = "Data added" }) : NotFound();
+        }
 
-            if (project == null)
-                return NotFound("Project not found");
-
-            project.GuidelineUrl = url;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Guideline updated successfully" });
+        [HttpPost("{id}/split-tasks")]
+        public async Task<IActionResult> SplitTasks(Guid id, [FromBody] SplitTaskDto dto) // int -> Guid
+        {
+            var managerId = GetManagerId();
+            try
+            {
+                var result = await _projectService.SplitTasksAsync(id, dto, managerId);
+                return result == null ? NotFound() : Ok(result);
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
         }
     }
 }
