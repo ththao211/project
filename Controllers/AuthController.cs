@@ -34,7 +34,7 @@ public class AuthController : ControllerBase
 
         if (!user.IsActive)
             return Unauthorized("Account is inactive");
-        
+
 
         var token = GenerateJwtToken(user);
 

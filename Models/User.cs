@@ -12,17 +12,28 @@ namespace SWP_BE.Models
             Annotator = 3,
             Reviewer = 4
         }
+        public class Users
+        {
+            public Guid Id { get; set; }
 
         // ===== PRIMARY KEY =====
         [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
 
         // ===== BASIC INFO =====
-        [Required]
+            [Required]
         [MaxLength(50)]
         public string UserName { get; set; } = string.Empty;
 
+            public UserRole Role { get; set; }
+
+            public bool IsActive { get; set; } = true;
+        }
+        public int UserID { get; set; }
+
         [Required]
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string UserName { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
 
         [MaxLength(100)]

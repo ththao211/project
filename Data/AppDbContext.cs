@@ -45,7 +45,7 @@ namespace SWP_BE.Data
                 .HasQueryFilter(u => u.IsActive);
         }
 
-        
+
 
 
     }

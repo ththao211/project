@@ -12,5 +12,6 @@ namespace SWP_BE.DTOs
         public int? Score { get; set; }
         public int? CurrentTaskCount { get; set; }
         public bool? IsActive { get; set; }
+        public UserRole Role { get; set; }
     }
 }

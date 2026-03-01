@@ -46,7 +46,7 @@ namespace SWP_BE.Controllers
                 FullName = dto.FullName,
                 Email = dto.Email,
                 Expertise = dto.Expertise,
-                Role = dto.Role,
+                Role = dto.Role,     
 
                 // DEFAULT VALUES
                 Score = 100,
@@ -66,6 +66,7 @@ namespace SWP_BE.Controllers
                 userId = user.Id
             });
         }
+
         // GET ALL USERS
         [HttpGet("Get all User")]
         public async Task<IActionResult> GetAllUsers()
@@ -90,11 +91,11 @@ namespace SWP_BE.Controllers
             if (user.UserName != currentUserName && currentRole != "Admin")
             {
                 return Forbid("You can only update your own account.");
-            }
+        }
 
             // Admin ko thể chỉnh Admin khác
             if (currentRole == "Admin" && user.Role == UserRole.Admin && user.UserName != currentUserName)
-            {
+        {
                 return Forbid("Admin cannot modify another Admin.");
             }
 
@@ -114,7 +115,11 @@ namespace SWP_BE.Controllers
             if (!string.IsNullOrEmpty(dto.Expertise))
                 user.Expertise = dto.Expertise;
 
-            
+            if (!string.IsNullOrEmpty(dto.Username))
+                user.UserName = dto.Username;
+
+            if (dto.IsActive.HasValue)
+                user.IsActive = dto.IsActive.Value;
 
             await LogActivity("Update User", user.Id);
             await _context.SaveChangesAsync();
@@ -177,7 +182,7 @@ namespace SWP_BE.Controllers
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var log = new ActivityLog
-            {
+        {
                 Id = Guid.NewGuid(),
                 Action = action,
                 TargetUserId = targetUserId,     
@@ -189,5 +194,5 @@ namespace SWP_BE.Controllers
 
             return Task.CompletedTask;  
         }
-     }
     }
+}
