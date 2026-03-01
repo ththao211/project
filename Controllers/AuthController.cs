@@ -6,7 +6,6 @@ using SWP_BE.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using BCrypt.Net; 
 
 namespace SWP_BE.Controllers
 {
@@ -26,39 +25,38 @@ namespace SWP_BE.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDTO dto)
         {
-            var user = _context.Users
-                .FirstOrDefault(u => u.UserName == dto.Username);
-            if (user == null)
-                return Unauthorized("Username not found");
-            if (!VerifyPassword(dto.Password, user.Password))
-                return Unauthorized("Wrong password");
+            var user = _context.Users.FirstOrDefault(u => u.UserName == dto.Username);
+
+            if (user == null || !VerifyPassword(dto.Password, user.Password))
+                return Unauthorized("Invalid username or password");
+
             if (!user.IsActive)
                 return Unauthorized("Account is inactive");
+
             var token = GenerateJwtToken(user);
 
-            return Ok(new
-            {
-                token,
-                role = user.Role,
-                userId = user.UserID,
-                username = user.UserName
-            });
+            return Ok(new { token, role = (int)user.Role, userId = user.UserID });
         }
 
         private string GenerateJwtToken(User user)
         {
+            // Ép kiểu (int) để dùng switch case chuẩn xác
+            string roleName = ((int)user.Role) switch
+            {
+                1 => "Admin",
+                2 => "Manager",
+                3 => "Annotator",
+                4 => "Reviewer",
+            };
+
             var claims = new[]
             {
                 new Claim("id", user.UserID.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.Role, user.Role.ToString())
+                new Claim(ClaimTypes.Role, roleName)
             };
 
-            var jwtKey = _configuration["Jwt:Key"];
-            if (string.IsNullOrEmpty(jwtKey))
-                throw new Exception("JWT Key is missing in configuration!");
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
@@ -79,7 +77,8 @@ namespace SWP_BE.Controllers
                 return BCrypt.Net.BCrypt.Verify(inputPassword, storedPassword);
             }
             catch
-            {                return inputPassword == storedPassword;
+            {
+                return inputPassword == storedPassword;
             }
         }
     }
