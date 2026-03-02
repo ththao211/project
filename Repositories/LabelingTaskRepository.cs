@@ -8,11 +8,11 @@ namespace SWP_BE.Repositories
     {
         Task<IEnumerable<DataItem>> GetUnassignedDataByProjectIdAsync(Guid projectId);
         Task<List<DataItem>> GetDataItemsByIdsAsync(Guid projectId, List<Guid> dataIds);
-        Task<LabelingTask?> GetTaskByIdAsync(Guid taskId);
-        Task<IEnumerable<LabelingTask>> GetTasksByProjectIdAsync(Guid projectId);
-        Task CreateTaskWithItemsAsync(LabelingTask task, List<TaskItem> taskItems, List<DataItem> updatedDataItems);
-        Task UpdateTaskAsync(LabelingTask task);
-        Task SaveChangesAsync();
+        Task<Task?> GetTaskByIdAsync(Guid taskId);
+        Task<IEnumerable<Task>> GetTasksByProjectIdAsync(Guid projectId);
+        System.Threading.Tasks.Task CreateTaskWithItemsAsync(Models.Task task, List<TaskItem> taskItems, List<DataItem> updatedDataItems);
+        System.Threading.Tasks.Task UpdateTaskAsync(Models.Task task);
+        System.Threading.Tasks.Task SaveChangesAsync();
     }
 
     public class LabelingTaskRepository : ILabelingTaskRepository
@@ -34,12 +34,12 @@ namespace SWP_BE.Repositories
                 .ToListAsync();
         }
 
-        public async Task<LabelingTask?> GetTaskByIdAsync(Guid taskId)
+        public async Task<Task?> GetTaskByIdAsync(Guid taskId)
         {
             return await _context.LabelingTasks.FindAsync(taskId);
         }
 
-        public async Task<IEnumerable<LabelingTask>> GetTasksByProjectIdAsync(Guid projectId)
+        public async Task<IEnumerable<Task>> GetTasksByProjectIdAsync(Guid projectId)
         {
             // Include thêm TaskItems để đếm số lượng file trong Task cho API 4
             return await _context.LabelingTasks
@@ -49,7 +49,7 @@ namespace SWP_BE.Repositories
         }
 
         // Dùng Transaction để đảm bảo 3 bước của API 2 (Tạo Task, Tạo TaskItem, Update DataItem) thành công cùng lúc
-        public async Task CreateTaskWithItemsAsync(LabelingTask task, List<TaskItem> taskItems, List<DataItem> updatedDataItems)
+        public async System.Threading.Tasks.Task CreateTaskWithItemsAsync(Models.Task task, List<TaskItem> taskItems, List<DataItem> updatedDataItems)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -68,12 +68,12 @@ namespace SWP_BE.Repositories
             }
         }
 
-        public async Task UpdateTaskAsync(LabelingTask task)
+        public async System.Threading.Tasks.Task UpdateTaskAsync(Models.Task task)
         {
             _context.LabelingTasks.Update(task);
-            await Task.CompletedTask;
+            await System.Threading.Tasks.Task.CompletedTask;
         }
 
-        public async Task SaveChangesAsync() { await _context.SaveChangesAsync(); }
+        public async System.Threading.Tasks.Task SaveChangesAsync() { await _context.SaveChangesAsync(); }
     }
 }

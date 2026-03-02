@@ -408,6 +408,13 @@ namespace SWP_BE.Migrations
                     b.Property<Guid>("AdminID")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AllowedFileTypes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MaxProjectStorageMB")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 

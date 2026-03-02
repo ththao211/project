@@ -12,8 +12,8 @@ using SWP_BE.Data;
 namespace SWP_BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260301044721_Database")]
-    partial class Database
+    [Migration("20260301105408_TenMigration")]
+    partial class TenMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -410,6 +410,13 @@ namespace SWP_BE.Migrations
 
                     b.Property<Guid>("AdminID")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AllowedFileTypes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MaxProjectStorageMB")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");

@@ -17,7 +17,7 @@ namespace SWP_BE.Controllers
         public AdminController(AppDbContext context) { _context = context; }
 
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpPost("create-user")]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {

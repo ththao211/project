@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SWP_BE.Migrations
 {
     /// <inheritdoc />
-    public partial class Database : Migration
+    public partial class TenMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -105,6 +105,8 @@ namespace SWP_BE.Migrations
                     ConfigID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Value = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MaxProjectStorageMB = table.Column<int>(type: "int", nullable: false),
+                    AllowedFileTypes = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AdminID = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },

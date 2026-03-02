@@ -10,7 +10,7 @@ namespace SWP_BE.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Label> Labels { get; set; }
         public DbSet<Project> Projects { get; set; }
-        public DbSet<LabelingTask> LabelingTasks { get; set; }
+        public DbSet<Models.Task> Tasks { get; set; } 
         public DbSet<ProjectLabel> ProjectLabels { get; set; }
         public DbSet<DataItem> DataItems { get; set; }
         public DbSet<TaskItem> TaskItems { get; set; }
@@ -34,13 +34,10 @@ namespace SWP_BE.Data
                 relationship.DeleteBehavior = DeleteBehavior.Restrict;
             }
 
-            // --- ĐÃ XÓA HASQUERYFILTER ĐỂ FIX LỖI MỐI QUAN HỆ ---
-
             // 2. Ràng buộc duy nhất cho UserName
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.UserName)
                 .IsUnique();
-
             // 3. Cấu hình ActivityLog
             modelBuilder.Entity<ActivityLog>(entity =>
             {

@@ -19,6 +19,6 @@ namespace SWP_BE.Models
         public User? Manager { get; set; }
         public virtual ICollection<DataItem> DataItems { get; set; } = new List<DataItem>();
         public virtual ICollection<ProjectLabel>? ProjectLabels { get; set; } 
-        public virtual ICollection<LabelingTask>? Tasks { get; set; }
+        public virtual ICollection<Task>? Tasks { get; set; }
     }
 }

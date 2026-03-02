@@ -47,7 +47,7 @@ namespace SWP_BE.Services
             }
 
             // 1. Tạo bảng LabelingTask
-            var newTask = new LabelingTask
+            var newTask = new Models.Task
             {
                 TaskID = Guid.NewGuid(),
                 ProjectID = projectId,
