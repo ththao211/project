@@ -17,6 +17,8 @@ namespace SWP_BE.Models
         public DateTime Deadline { get; set; }
         public int CurrentRound { get; set; }
         public double SubmissionRate { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? CompletedAt { get; set; }
 
         // Foreign Keys
         public Guid ProjectID { get; set; }
