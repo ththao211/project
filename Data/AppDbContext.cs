@@ -11,7 +11,7 @@ namespace SWP_BE.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Label> Labels { get; set; }
         public DbSet<Project> Projects { get; set; }
-        public DbSet<SWP_BE.Models.Tasks> Tasks { get; set; }
+        public DbSet<SWP_BE.Models.Task> Tasks { get; set; }
 
         public DbSet<ProjectLabel> ProjectLabels { get; set; }
         public DbSet<DataItem> DataItems { get; set; }

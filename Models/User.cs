@@ -36,9 +36,9 @@ namespace SWP_BE.Models
         public ICollection<Project>? ManagedProjects { get; set; }
 
         [InverseProperty("Annotator")]
-        public ICollection<Tasks>? AnnotatorTasks { get; set; }
+        public ICollection<Task>? AnnotatorTasks { get; set; }
 
         [InverseProperty("Reviewer")]
-        public ICollection<Tasks>? ReviewerTasks { get; set; }
+        public ICollection<Task>? ReviewerTasks { get; set; }
     }
 }

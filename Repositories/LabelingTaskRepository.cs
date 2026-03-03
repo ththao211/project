@@ -6,7 +6,7 @@ using System.Linq;
 // Giải quyết xung đột: Ép C# hiểu Task là của hệ thống, 
 // còn MyTask là cái bảng Task của bạn trong Database.
 using Task = System.Threading.Tasks.Task;
-using MyTask = SWP_BE.Models.Tasks;
+using MyTask = SWP_BE.Models.Task;
 
 namespace SWP_BE.Repositories
 {
@@ -15,7 +15,7 @@ namespace SWP_BE.Repositories
         Task<IEnumerable<DataItem>> GetUnassignedDataByProjectIdAsync(Guid projectId);
         Task<List<DataItem>> GetDataItemsByIdsAsync(Guid projectId, List<Guid> dataIds);
         Task<MyTask?> GetTaskByIdAsync(Guid taskId);
-        Task<IEnumerable<Tasks>> GetTasksByProjectIdAsync(Guid projectId);
+        Task<IEnumerable<MyTask>> GetTasksByProjectIdAsync(Guid projectId);
         Task CreateTaskWithItemsAsync(MyTask task, List<TaskItem> taskItems, List<DataItem> updatedDataItems);
         Task UpdateTaskAsync(MyTask task);
         Task SaveChangesAsync();
@@ -46,7 +46,7 @@ namespace SWP_BE.Repositories
             return await _context.Tasks.FindAsync(taskId);
         }
 
-        public async Task<IEnumerable<Tasks>> GetTasksByProjectIdAsync(Guid projectId)
+        public async Task<IEnumerable<MyTask>> GetTasksByProjectIdAsync(Guid projectId)
         {
             // Sửa lỗi: Đổi LabelingTasks thành Tasks
             return await _context.Tasks

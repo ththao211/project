@@ -5,10 +5,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SWP_BE.Models
 {
-    [Table("Tasks")] 
-    public class Tasks
+    [Table("Tasks")]
+    public class Task
     {
-
         [Key]
         public Guid TaskID { get; set; }
         public string TaskName { get; set; } = string.Empty;
@@ -16,10 +15,10 @@ namespace SWP_BE.Models
         public int RejectCount { get; set; }
         public double RateComplete { get; set; }
         public DateTime Deadline { get; set; }
-        public DateTime CompletedAt { get; set; } = DateTime.Now;
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
         public int CurrentRound { get; set; }
         public double SubmissionRate { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? CompletedAt { get; set; }
 
         // Foreign Keys
         public Guid ProjectID { get; set; }

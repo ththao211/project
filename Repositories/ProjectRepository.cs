@@ -1,12 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.Models;
-using System.Collections.Generic;
-using System.Linq;
-
-// Dùng Alias để tách biệt rõ ràng
+using MyTask = SWP_BE.Models.Task;
 using Task = System.Threading.Tasks.Task;
-using MyTask = SWP_BE.Models.Tasks;
 
 namespace SWP_BE.Repositories
 {
