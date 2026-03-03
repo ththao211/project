@@ -12,6 +12,7 @@ namespace SWP_BE.Models
         public string Topic { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime Deadline { get; set; } 
         public string ProjectType { get; set; } = string.Empty;
         public string GuidelineUrl { get; set; } = string.Empty;
         public Guid ManagerID { get; set; }

@@ -6,7 +6,11 @@ using System.Linq;
 
 // Dùng Alias để tách biệt rõ ràng
 using Task = System.Threading.Tasks.Task;
+<<<<<<< HEAD
 using MyTask = SWP_BE.Models.Task;
+=======
+using MyTask = SWP_BE.Models.Tasks;
+>>>>>>> origin/Login
 
 namespace SWP_BE.Repositories
 {

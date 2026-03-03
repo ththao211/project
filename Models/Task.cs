@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SWP_BE.Models
 {
-    [Table("Tasks")] 
+    [Table("Tasks")]
     public class Task
     {
         [Key]
