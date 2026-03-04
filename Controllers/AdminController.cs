@@ -26,9 +26,6 @@ namespace SWP_BE.Controllers
             if (await _context.Users.AnyAsync(x => x.UserName == dto.Username))
                 return BadRequest("Username already exists");
 
-            if (await _context.Users.AnyAsync(x => x.Email == dto.Email))
-                return BadRequest("Email already exists");
-
             var user = new User
             {
                 UserID = Guid.NewGuid(),

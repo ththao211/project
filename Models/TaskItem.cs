@@ -14,5 +14,6 @@ namespace SWP_BE.Models
         public Guid DataID { get; set; }
         [ForeignKey("DataID")]
         public DataItem? DataItem { get; set; }
+        public virtual ICollection<TaskItemDetail> TaskItemDetails { get; set; } = new List<TaskItemDetail>();
     }
 }

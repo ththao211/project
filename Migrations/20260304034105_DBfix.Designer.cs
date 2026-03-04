@@ -12,8 +12,8 @@ using SWP_BE.Data;
 namespace SWP_BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260303033353_Init")]
-    partial class Init
+    [Migration("20260304034105_DBfix")]
+    partial class DBfix
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -669,7 +669,7 @@ namespace SWP_BE.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SWP_BE.Models.User", "User")
-                        .WithMany()
+                        .WithMany("ReputationLogs")
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -778,7 +778,7 @@ namespace SWP_BE.Migrations
             modelBuilder.Entity("SWP_BE.Models.TaskItemDetail", b =>
                 {
                     b.HasOne("SWP_BE.Models.TaskItem", "TaskItem")
-                        .WithMany()
+                        .WithMany("TaskItemDetails")
                         .HasForeignKey("TaskItemID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -800,11 +800,18 @@ namespace SWP_BE.Migrations
                     b.Navigation("TaskItems");
                 });
 
+            modelBuilder.Entity("SWP_BE.Models.TaskItem", b =>
+                {
+                    b.Navigation("TaskItemDetails");
+                });
+
             modelBuilder.Entity("SWP_BE.Models.User", b =>
                 {
                     b.Navigation("AnnotatorTasks");
 
                     b.Navigation("ManagedProjects");
+
+                    b.Navigation("ReputationLogs");
 
                     b.Navigation("ReviewerTasks");
                 });
