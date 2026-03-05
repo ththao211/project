@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SWP_BE.Models;
+using SWP_BE.Services;
 using System.Linq;
 
 namespace SWP_BE.Data
@@ -25,6 +26,8 @@ namespace SWP_BE.Data
         public DbSet<SystemLog> SystemLogs { get; set; }
         public DbSet<ExportHistory> ExportHistories { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
+        public DbSet<NotificationService> Notifications { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

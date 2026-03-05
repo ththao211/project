@@ -26,9 +26,6 @@ namespace SWP_BE.Controllers
             if (await _context.Users.AnyAsync(x => x.UserName == dto.Username))
                 return BadRequest("Username already exists");
 
-            if (await _context.Users.AnyAsync(x => x.Email == dto.Email))
-                return BadRequest("Email already exists");
-
             var user = new User
             {
                 UserID = Guid.NewGuid(),
@@ -154,17 +151,36 @@ namespace SWP_BE.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPatch("assign-role/{id}")]
-        public async System.Threading.Tasks.Task<IActionResult> AssignRole(Guid id, [FromBody] UserRole newRole)
+        public async Task<IActionResult> AssignRole(Guid id, [FromBody] User.UserRole newRole)
         {
             var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound("User not found.");
-            if (!Enum.IsDefined(typeof(UserRole), newRole)) return BadRequest("Invalid role.");
+            if (user == null)
+                return NotFound("User not found.");
+
+            if (!Enum.IsDefined(typeof(User.UserRole), newRole))
+                return BadRequest("Invalid role.");
+            var currentUserId = Guid.Parse(User.FindFirst("sub")!.Value);
+            var currentUser = await _context.Users.FindAsync(currentUserId);
+
+            if (currentUser == null)
+                return Unauthorized();
+
+            //  Không cho tự hạ cấp chính mình
+            if (user.UserID == currentUserId && newRole != SWP_BE.Models.User.UserRole.Admin)
+                return BadRequest("You cannot downgrade your own Admin role.");
+
+            //  Không cho hạ cấp 1 Admin khác
+            if (user.Role == SWP_BE.Models.User.UserRole.Admin && newRole != SWP_BE.Models.User.UserRole.Admin)
+                return BadRequest("Cannot downgrade another Admin.");
 
             user.Role = newRole;
+
             await LogActivity("Assign Role", user.UserID);
             await _context.SaveChangesAsync();
+
             return Ok("Role assigned successfully.");
         }
+
 
         [Authorize]
         [HttpPut("update-user-info")]

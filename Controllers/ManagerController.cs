@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Services;
 using System;
@@ -18,8 +20,15 @@ namespace SWP_BE.Controllers
     public class ManagerController : ControllerBase
     {
         private readonly IProjectService _projectService;
-        public ManagerController(IProjectService projectService) { _projectService = projectService; }
+        private readonly AppDbContext _context;
 
+        public ManagerController(
+            IProjectService projectService,
+            AppDbContext context)
+        {
+            _projectService = projectService;
+            _context = context;
+        }
         private Guid GetManagerId()
         {
             var claim = User.FindFirst("id");
@@ -161,6 +170,106 @@ namespace SWP_BE.Controllers
                 return result == null ? NotFound() : Ok(result);
             }
             catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [HttpGet("{projectId}/overview")]
+        public async Task<IActionResult> GetProjectOverview(Guid projectId)
+        {
+            var managerId = GetManagerId();
+
+            var project = await _context.Projects
+                .Include(p => p.Manager)
+                .Include(p => p.DataItems)
+                .Include(p => p.ProjectLabels)
+                    .ThenInclude(pl => pl.Label)
+                .Include(p => p.Tasks)
+                    .ThenInclude(t => t.Annotator)
+                .Include(p => p.Tasks)
+                    .ThenInclude(t => t.Reviewer)
+                .FirstOrDefaultAsync(p =>
+                    p.ProjectID == projectId &&
+                    p.ManagerID == managerId); // 🔐 Check quyền
+
+            if (project == null)
+                return NotFound("Project không tồn tại hoặc không thuộc quyền của bạn.");
+
+            // ====== Statistics (Enum chuẩn) ======
+            var totalTasks = project.Tasks?.Count ?? 0;
+            var totalDataItems = project.DataItems?.Count ?? 0;
+
+            var completedTasks = project.Tasks?
+                .Count(t => t.Status == "Approved") ?? 0;
+
+            var inProgressTasks = project.Tasks?
+                .Count(t =>
+                    t.Status =="PendingRework" ||
+                    t.Status == "Assigned" ||
+                    t.Status == "PendingReview") ?? 0;
+
+            var result = new
+            {
+                project = new
+                {
+                    project.ProjectID,
+                    project.ProjectName,
+                    project.Description,
+                    project.Topic,
+                    project.Status,
+                    project.ProjectType,
+                    project.Deadline,
+                    project.GuidelineUrl,
+                    project.CreatedAt
+                },
+
+                manager = project.Manager == null ? null : new
+                {
+                    project.Manager.UserID,
+                    project.Manager.FullName,
+                    project.Manager.Email
+                },
+
+                totalDataItems,
+
+                labels = project.ProjectLabels?.Select(pl => new
+                {
+                    pl.ProjectLabelID,
+                    pl.LabelID,
+                    LabelName = pl.Label.LabelName,
+                    pl.CustomName
+                }),
+
+                tasks = project.Tasks?.Select(t => new
+                {
+                    t.TaskID,
+                    t.TaskName,
+                    t.Status,
+                    t.Deadline,
+                    t.RateComplete,
+
+                    annotator = t.Annotator == null ? null : new
+                    {
+                        t.Annotator.UserID,
+                        t.Annotator.FullName,
+                        t.Annotator.Score
+                    },
+
+                    reviewer = t.Reviewer == null ? null : new
+                    {
+                        t.Reviewer.UserID,
+                        t.Reviewer.FullName,
+                        t.Reviewer.Score
+                    }
+                }),
+
+                statistics = new
+                {
+                    totalTasks,
+                    completedTasks,
+                    inProgressTasks
+                }
+            };
+
+            return Ok(result);
         }
     }
 }
