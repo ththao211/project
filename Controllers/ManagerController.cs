@@ -14,7 +14,7 @@ namespace SWP_BE.Controllers
     /// </summary>
     [ApiController]
     [Route("api/manager/projects")]
-    [Authorize(Roles = "Manager")] // Yêu cầu quyền Manager để truy cập
+    //[Authorize(Roles = "Manager")] // Yêu cầu quyền Manager để truy cập
     public class ManagerController : ControllerBase
     {
         private readonly IProjectService _projectService;

@@ -64,19 +64,24 @@ namespace SWP_BE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FileSize")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("FileType")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("Height")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsAssigned")
                         .HasColumnType("bit");
 
                     b.Property<Guid>("ProjectID")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Width")
+                        .HasColumnType("int");
 
                     b.HasKey("DataID");
 
@@ -87,11 +92,9 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.Dispute", b =>
                 {
-                    b.Property<int>("DisputeID")
+                    b.Property<Guid>("DisputeID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DisputeID"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -107,16 +110,21 @@ namespace SWP_BE.Migrations
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Result")
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("TaskID")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("DisputeID");
 
                     b.HasIndex("TaskID");
+
+                    b.HasIndex("UserID");
 
                     b.ToTable("Disputes");
                 });
@@ -261,9 +269,18 @@ namespace SWP_BE.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("NewScore")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OldScore")
+                        .HasColumnType("int");
+
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("RuleID")
+                        .HasColumnType("int");
 
                     b.Property<int>("ScoreChange")
                         .HasColumnType("int");
@@ -276,11 +293,149 @@ namespace SWP_BE.Migrations
 
                     b.HasKey("ReputationLogID");
 
+                    b.HasIndex("RuleID");
+
                     b.HasIndex("TaskID");
 
                     b.HasIndex("UserID");
 
                     b.ToTable("ReputationLogs");
+                });
+
+            modelBuilder.Entity("SWP_BE.Models.ReputationRule", b =>
+                {
+                    b.Property<int>("RuleID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RuleID"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RuleName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Value")
+                        .HasColumnType("int");
+
+                    b.HasKey("RuleID");
+
+                    b.ToTable("ReputationRules");
+
+                    b.HasData(
+                        new
+                        {
+                            RuleID = 1,
+                            Category = "Reward",
+                            Description = "Hoàn thành ngay lần đầu (0 reject)",
+                            IsActive = true,
+                            RuleName = "Reward_Perfect",
+                            UpdatedAt = new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8116),
+                            Value = 20
+                        },
+                        new
+                        {
+                            RuleID = 2,
+                            Category = "Bonus",
+                            Description = "Thưởng thêm nếu RateComplete > 95%",
+                            IsActive = true,
+                            RuleName = "Bonus_HighRate",
+                            UpdatedAt = new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8133),
+                            Value = 2
+                        },
+                        new
+                        {
+                            RuleID = 3,
+                            Category = "Penalty",
+                            Description = "Trừ điểm khi Approve ở lần sửa 2",
+                            IsActive = true,
+                            RuleName = "Penalty_Reject_2",
+                            UpdatedAt = new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8135),
+                            Value = -5
+                        },
+                        new
+                        {
+                            RuleID = 4,
+                            Category = "Penalty",
+                            Description = "Trừ điểm khi Approve ở lần sửa 3",
+                            IsActive = true,
+                            RuleName = "Penalty_Reject_3",
+                            UpdatedAt = new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8137),
+                            Value = -10
+                        },
+                        new
+                        {
+                            RuleID = 5,
+                            Category = "Penalty",
+                            Description = "Task bị Fail (Reject lần 4)",
+                            IsActive = true,
+                            RuleName = "Penalty_Task_Fail",
+                            UpdatedAt = new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8139),
+                            Value = -20
+                        },
+                        new
+                        {
+                            RuleID = 6,
+                            Category = "Threshold",
+                            Description = "Ngưỡng >= 50đ",
+                            IsActive = true,
+                            RuleName = "High_Threshold",
+                            UpdatedAt = new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8142),
+                            Value = 50
+                        },
+                        new
+                        {
+                            RuleID = 7,
+                            Category = "Threshold",
+                            Description = "Ngưỡng 20 - 50đ",
+                            IsActive = true,
+                            RuleName = "Low_Threshold",
+                            UpdatedAt = new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8143),
+                            Value = 20
+                        },
+                        new
+                        {
+                            RuleID = 8,
+                            Category = "Limit",
+                            Description = "Max 3 task",
+                            IsActive = true,
+                            RuleName = "Max_Task_High",
+                            UpdatedAt = new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8145),
+                            Value = 3
+                        },
+                        new
+                        {
+                            RuleID = 9,
+                            Category = "Limit",
+                            Description = "Max 2 task",
+                            IsActive = true,
+                            RuleName = "Max_Task_Normal",
+                            UpdatedAt = new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8147),
+                            Value = 2
+                        },
+                        new
+                        {
+                            RuleID = 10,
+                            Category = "Limit",
+                            Description = "Max 1 task",
+                            IsActive = true,
+                            RuleName = "Max_Task_Warning",
+                            UpdatedAt = new DateTime(2026, 3, 6, 15, 54, 52, 336, DateTimeKind.Local).AddTicks(8149),
+                            Value = 1
+                        });
                 });
 
             modelBuilder.Entity("SWP_BE.Models.ReviewComment", b =>
@@ -327,9 +482,6 @@ namespace SWP_BE.Migrations
                     b.Property<string>("FinalResult")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("IDDetail")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("ReviewAt")
                         .HasColumnType("datetime2");
@@ -400,8 +552,9 @@ namespace SWP_BE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("TargetID")
-                        .HasColumnType("int");
+                    b.Property<string>("TargetID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("UserID")
                         .HasColumnType("uniqueidentifier");
@@ -446,9 +599,8 @@ namespace SWP_BE.Migrations
                     b.Property<Guid?>("ReviewerID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<double>("SubmissionRate")
                         .HasColumnType("float");
@@ -531,6 +683,9 @@ namespace SWP_BE.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("CurrentTaskCount")
                         .HasColumnType("int");
 
@@ -541,6 +696,9 @@ namespace SWP_BE.Migrations
                     b.Property<string>("Expertise")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("FirebaseUid")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -549,7 +707,6 @@ namespace SWP_BE.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Password")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Role")
@@ -606,7 +763,15 @@ namespace SWP_BE.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SWP_BE.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Task");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.ExportHistory", b =>
@@ -660,6 +825,11 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.ReputationLog", b =>
                 {
+                    b.HasOne("SWP_BE.Models.ReputationRule", "AppliedRule")
+                        .WithMany()
+                        .HasForeignKey("RuleID")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SWP_BE.Models.Task", "Task")
                         .WithMany()
                         .HasForeignKey("TaskID")
@@ -670,6 +840,8 @@ namespace SWP_BE.Migrations
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("AppliedRule");
 
                     b.Navigation("Task");
 

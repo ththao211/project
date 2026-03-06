@@ -52,17 +52,19 @@ namespace SWP_BE
     });
             });
 
-            builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
-            builder.Services.AddScoped<IProjectService, ProjectService>();
-
             builder.Services.AddScoped<ILabelRepository, LabelRepository>();
             builder.Services.AddScoped<ILabelService, LabelService>();
-
             builder.Services.AddScoped<IProjectLabelRepository, ProjectLabelRepository>();
             builder.Services.AddScoped<IProjectLabelService, ProjectLabelService>();
-
             builder.Services.AddScoped<ILabelingTaskRepository, LabelingTaskRepository>();
             builder.Services.AddScoped<ILabelingTaskService, LabelingTaskService>();
+            builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+            builder.Services.AddScoped<IProjectService, ProjectService>();
+            builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<IAnnotatorRepository, AnnotatorRepository>();
+            builder.Services.AddScoped<AnnotatorService>();
+            builder.Services.AddScoped<IReputationRepository, ReputationRepository>();
+            builder.Services.AddScoped<ReputationService>();
 
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

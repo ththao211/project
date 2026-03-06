@@ -1,5 +1,15 @@
-﻿namespace SWP_BE.DTOs
+﻿using System;
+using System.Collections.Generic;
+
+namespace SWP_BE.DTOs
 {
+    // THÊM MỚI: Class chứa thông tin Tên và Màu của nhãn
+    public class LabelInfoDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
+    }
+
     public class AnnotatorTaskDto
     {
         public Guid TaskID { get; set; }
@@ -12,6 +22,20 @@
     public class TaskDetailDto : AnnotatorTaskDto
     {
         public List<TaskItemDto> TaskItems { get; set; } = new();
+
+        public List<LabelInfoDto> AvailableLabels { get; set; } = new();
+    }
+
+    public class AnnotationDetailDto
+    {
+        // Dữ liệu tọa độ (x, y, width, height) dạng JSON string
+        public string AnnotationData { get; set; } = string.Empty;
+
+        // Tên của Label mà người dùng đã chọn (ví dụ: "Car")
+        public string Content { get; set; } = string.Empty;
+
+        // Loại công cụ vẽ (mặc định là BoundingBox)
+        public string Field { get; set; } = "BoundingBox";
     }
 
     public class TaskItemDto
@@ -20,14 +44,12 @@
         public string FileName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
         public bool IsFlagged { get; set; }
-        public string? AnnotationData { get; set; } // Lấy từ TaskItemDetail
-        public string? Content { get; set; }
+        public List<AnnotationDetailDto> Annotations { get; set; } = new();
     }
 
     public class SaveAnnotationDto
     {
-        public string AnnotationData { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
+        public List<AnnotationDetailDto> Annotations { get; set; } = new();
     }
 
     public class DisputeRequestDto
