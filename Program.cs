@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using SWP_BE.Data;
 using SWP_BE.Repositories;
 using SWP_BE.Services;
-using System.Text;
-using Microsoft.OpenApi.Models;
 
 namespace SWP_BE
 {
@@ -89,6 +90,10 @@ namespace SWP_BE
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<IAnnotatorRepository, AnnotatorRepository>();
             builder.Services.AddScoped<AnnotatorService>();
+            builder.Services.AddScoped<ILabelRepository, LabelRepository>();
+            builder.Services.AddScoped<IAnnotatorRepository, AnnotatorRepository>();
+            builder.Services.AddScoped<AnnotatorService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
 
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -97,13 +102,15 @@ namespace SWP_BE
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
-                        ValidateAudience = true,
+                        ValidateAudience = true, 
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
                         ValidAudience = builder.Configuration["Jwt:Audience"],
                         IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+                        RoleClaimType = ClaimTypes.Role,
+                        NameClaimType = ClaimTypes.NameIdentifier
                     };
                 });
 

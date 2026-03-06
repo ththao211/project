@@ -38,15 +38,17 @@ namespace SWP_BE.Controllers
             {
                 return Unauthorized(ApiResponse<object>.Fail("Tài khoản đã bị vô hiệu hóa"));
             }
+
             var token = GenerateJwtToken(user);
             string roleName = GetRoleName(user.Role);
+
             var responseData = new LoginResponseDTO
             {
                 Token = token,
                 User = new UserInfoDTO
                 {
                     UserId = user.UserID,
-                    FullName = user.FullName, 
+                    FullName = user.FullName,
                     RoleName = roleName
                 }
             };
@@ -54,17 +56,18 @@ namespace SWP_BE.Controllers
             return Ok(ApiResponse<LoginResponseDTO>.Ok(responseData, "Đăng nhập thành công"));
         }
 
-        [Authorize] 
+        [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> GetMe()
         {
-            var userIdClaim = User.FindFirst("sub");
+            // FIX: Hỗ trợ tìm cả Claim chuẩn của .NET và Claim "sub" của Frontend
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
 
             if (userIdClaim == null)
-                return Unauthorized();
+                return Unauthorized(new { message = "Không tìm thấy thông tin định danh trong Token." });
 
             if (!Guid.TryParse(userIdClaim.Value, out Guid userId))
-                return Unauthorized();
+                return Unauthorized(new { message = "Định dạng ID không hợp lệ." });
 
             var user = await _context.Users
                 .Where(u => u.UserID == userId)
@@ -100,24 +103,19 @@ namespace SWP_BE.Controllers
         {
             var now = DateTime.UtcNow;
             var expires = now.AddHours(3);
+            var roleName = GetRoleName(user.Role);
 
             var claims = new List<Claim>
-    {
-       
-        new Claim(JwtRegisteredClaimNames.Sub, user.UserID.ToString()),
-        new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-        new Claim(JwtRegisteredClaimNames.Iat,
-            new DateTimeOffset(now).ToUnixTimeSeconds().ToString(),
-            ClaimValueTypes.Integer64),
-
-        
-        new Claim("role", GetRoleName(user.Role)),
-        new Claim("aud", "authenticated"),
-
-        
-        new Claim("full_name", user.FullName ?? ""),
-        new Claim("username", user.UserName ?? "")
-    };
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserID.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+                new Claim(JwtRegisteredClaimNames.Iat, new DateTimeOffset(now).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+                new Claim("role", roleName),
+                new Claim("full_name", user.FullName ?? ""),
+                new Claim("username", user.UserName ?? ""),
+                new Claim(ClaimTypes.Role, roleName), 
+                new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString())
+            };
 
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)
@@ -129,8 +127,8 @@ namespace SWP_BE.Controllers
             );
 
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"], 
-                audience: "authenticated",
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"] ?? "authenticated",
                 claims: claims,
                 notBefore: now,
                 expires: expires,

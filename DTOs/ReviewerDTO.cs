@@ -1,8 +1,8 @@
 ﻿namespace SWP_BE.DTOs
 {
-    public class FeedbackDTO
+    public partial class FeedbackDTO
     {
-        public string Comment { get; set; }
-        public string? ErrorRegion { get; set; } // bbox hoặc text segment
+        public string Comment { get; set; } = string.Empty;
+        public string? ErrorRegion { get; set; }
     }
 }

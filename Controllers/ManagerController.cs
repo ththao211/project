@@ -4,10 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
+
 
 namespace SWP_BE.Controllers
 {
@@ -29,11 +27,18 @@ namespace SWP_BE.Controllers
             _projectService = projectService;
             _context = context;
         }
+
         private Guid GetManagerId()
         {
-            var claim = User.FindFirst("id");
-            if (claim == null) throw new UnauthorizedAccessException("Phiên đăng nhập hết hạn hoặc thiếu ID.");
-            return Guid.Parse(claim.Value);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+            {
+                return userId;
+            }
+
+            throw new UnauthorizedAccessException("Phiên đăng nhập không hợp lệ hoặc thiếu ID người dùng.");
         }
 
         /// <summary> 
@@ -199,7 +204,6 @@ namespace SWP_BE.Controllers
             var totalDataItems = project.DataItems?.Count ?? 0;
 
             // FIX: Chỉ sử dụng các trạng thái chắc chắn có trong Enum TaskStatus của bạn
-            // Giả sử: New, InProgress, PendingReview, Approved (Hoặc trạng thái tương đương)
             var completedTasks = project.Tasks?
                 .Count(t => t.Status == SWP_BE.Models.Task.TaskStatus.Approved) ?? 0;
 
