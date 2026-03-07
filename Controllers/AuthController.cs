@@ -27,7 +27,15 @@ namespace SWP_BE.Controllers
             _configuration = configuration;
         }
 
+        /// <summary>
+        /// Đăng nhập vào hệ thống
+        /// </summary>
+        /// <param name="dto">Thông tin tài khoản và mật khẩu</param>
+        /// <response code="200">Đăng nhập thành công (trả về Token) hoặc yêu cầu đổi mật khẩu lần đầu</response>
+        /// <response code="401">Tài khoản/mật khẩu không chính xác hoặc tài khoản bị vô hiệu hóa</response>
         [HttpPost("login")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
         public async Task<IActionResult> Login(LoginDTO dto)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == dto.Username);
@@ -69,8 +77,20 @@ namespace SWP_BE.Controllers
 
         // --- CÁC API THÊM VÀO TỪ FILE 1 ---
 
+        /// <summary>
+        /// Đổi mật khẩu cho lần đăng nhập đầu tiên
+        /// </summary>
+        /// <param name="request">Chứa mật khẩu cũ và mật khẩu mới</param>
+        /// <response code="200">Đổi mật khẩu thành công</response>
+        /// <response code="400">Mật khẩu cũ không chính xác</response>
+        /// <response code="401">Không có quyền truy cập (thiếu token)</response>
+        /// <response code="404">Không tìm thấy người dùng</response>
         [Authorize]
         [HttpPost("change-password-first-login")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
         {
             var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -94,7 +114,15 @@ namespace SWP_BE.Controllers
             return Ok("Password changed successfully");
         }
 
+        /// <summary>
+        /// Yêu cầu đặt lại mật khẩu (Quên mật khẩu)
+        /// </summary>
+        /// <param name="request">Email của người dùng cần khôi phục</param>
+        /// <response code="200">Tạo mã khôi phục (token) thành công</response>
+        /// <response code="404">Không tìm thấy email trong hệ thống</response>
         [HttpPost("forgot-password")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
             var user = await _context.Users
@@ -115,7 +143,17 @@ namespace SWP_BE.Controllers
             });
         }
 
+        /// <summary>
+        /// Đặt lại mật khẩu mới bằng Token khôi phục
+        /// </summary>
+        /// <param name="request">Token khôi phục và mật khẩu mới</param>
+        /// <response code="200">Đặt lại mật khẩu thành công</response>
+        /// <response code="400">Token không hợp lệ hoặc đã hết hạn</response>
+        /// <response code="404">Không tìm thấy người dùng</response>
         [HttpPost("reset-password")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequests request)
         {
             if (!PasswordResetStore.ResetTokens.ContainsKey(request.Token))
@@ -139,8 +177,17 @@ namespace SWP_BE.Controllers
 
         // --- HẾT PHẦN THÊM TỪ FILE 1 ---
 
+        /// <summary>
+        /// Lấy thông tin cá nhân của người dùng đang đăng nhập
+        /// </summary>
+        /// <response code="200">Thông tin chi tiết của người dùng</response>
+        /// <response code="401">Không có quyền truy cập hoặc token không hợp lệ</response>
+        /// <response code="404">Không tìm thấy thông tin người dùng</response>
         [Authorize]
         [HttpGet("me")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> GetMe()
         {
             // FIX: Hỗ trợ tìm cả Claim chuẩn của .NET và Claim "sub" của Frontend
