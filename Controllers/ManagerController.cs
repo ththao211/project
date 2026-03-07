@@ -4,10 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Security.Claims;
+
 
 namespace SWP_BE.Controllers
 {
@@ -29,11 +27,18 @@ namespace SWP_BE.Controllers
             _projectService = projectService;
             _context = context;
         }
+
         private Guid GetManagerId()
         {
-            var claim = User.FindFirst("id");
-            if (claim == null) throw new UnauthorizedAccessException("Phiên đăng nhập hết hạn hoặc thiếu ID.");
-            return Guid.Parse(claim.Value);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var userId))
+            {
+                return userId;
+            }
+
+            throw new UnauthorizedAccessException("Phiên đăng nhập không hợp lệ hoặc thiếu ID người dùng.");
         }
 
         /// <summary> 
@@ -172,6 +177,7 @@ namespace SWP_BE.Controllers
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
 
+
         [HttpGet("{projectId}/overview")]
         public async Task<IActionResult> GetProjectOverview(Guid projectId)
         {
@@ -188,23 +194,23 @@ namespace SWP_BE.Controllers
                     .ThenInclude(t => t.Reviewer)
                 .FirstOrDefaultAsync(p =>
                     p.ProjectID == projectId &&
-                    p.ManagerID == managerId); // 🔐 Check quyền
+                    p.ManagerID == managerId);
 
             if (project == null)
                 return NotFound("Project không tồn tại hoặc không thuộc quyền của bạn.");
 
-            // ====== Statistics (Enum chuẩn) ======
+            // Statistics
             var totalTasks = project.Tasks?.Count ?? 0;
             var totalDataItems = project.DataItems?.Count ?? 0;
 
+            // FIX: Chỉ sử dụng các trạng thái chắc chắn có trong Enum TaskStatus của bạn
             var completedTasks = project.Tasks?
-                .Count(t => t.Status == "Approved") ?? 0;
+                .Count(t => t.Status == SWP_BE.Models.Task.TaskStatus.Approved) ?? 0;
 
             var inProgressTasks = project.Tasks?
                 .Count(t =>
-                    t.Status =="PendingRework" ||
-                    t.Status == "Assigned" ||
-                    t.Status == "PendingReview") ?? 0;
+                    t.Status == SWP_BE.Models.Task.TaskStatus.InProgress ||
+                    t.Status == SWP_BE.Models.Task.TaskStatus.PendingReview) ?? 0;
 
             var result = new
             {
@@ -214,7 +220,7 @@ namespace SWP_BE.Controllers
                     project.ProjectName,
                     project.Description,
                     project.Topic,
-                    project.Status,
+                    Status = project.Status.ToString(),
                     project.ProjectType,
                     project.Deadline,
                     project.GuidelineUrl,
@@ -230,19 +236,21 @@ namespace SWP_BE.Controllers
 
                 totalDataItems,
 
+                // Lấy đúng màu sắc để Frontend vẽ Overview (như Dashboard Manager)
                 labels = project.ProjectLabels?.Select(pl => new
                 {
                     pl.ProjectLabelID,
                     pl.LabelID,
-                    LabelName = pl.Label.LabelName,
-                    pl.CustomName
+                    LabelName = pl.Label?.LabelName,
+                    pl.CustomName,
+                    Color = pl.Label?.DefaultColor ?? "#ffffff"
                 }),
 
                 tasks = project.Tasks?.Select(t => new
                 {
                     t.TaskID,
                     t.TaskName,
-                    t.Status,
+                    Status = t.Status.ToString(),
                     t.Deadline,
                     t.RateComplete,
 
@@ -265,7 +273,8 @@ namespace SWP_BE.Controllers
                 {
                     totalTasks,
                     completedTasks,
-                    inProgressTasks
+                    inProgressTasks,
+                    progressPercentage = totalTasks > 0 ? (double)completedTasks / totalTasks * 100 : 0
                 }
             };
 

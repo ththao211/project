@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -38,15 +39,25 @@ namespace SWP_BE.Controllers
             {
                 return Unauthorized(ApiResponse<object>.Fail("Tài khoản đã bị vô hiệu hóa"));
             }
+
+            if (dto.Password == "123456")
+            {
+                return Ok(new
+                {
+                    requirePasswordChange = true,
+                    message = "You must change password before using system"
+                });
+            }
             var token = GenerateJwtToken(user);
             string roleName = GetRoleName(user.Role);
+
             var responseData = new LoginResponseDTO
             {
                 Token = token,
                 User = new UserInfoDTO
                 {
                     UserId = user.UserID,
-                    FullName = user.FullName, 
+                    FullName = user.FullName,
                     RoleName = roleName
                 }
             };
@@ -54,17 +65,81 @@ namespace SWP_BE.Controllers
             return Ok(ApiResponse<LoginResponseDTO>.Ok(responseData, "Đăng nhập thành công"));
         }
 
-        [Authorize] 
+        [Authorize]
+        [HttpPost("change-password-first-login")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+        {
+            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+                return NotFound();
+
+            if (user.Password != request.OldPassword)
+                return BadRequest("Old password incorrect");
+
+            user.Password = request.NewPassword;
+
+            await _context.SaveChangesAsync();
+
+            return Ok("Password changed successfully");
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.Email == request.Email);
+
+            if (user == null)
+                return NotFound("User not found");
+
+            var token = Guid.NewGuid().ToString();
+
+            PasswordResetStore.ResetTokens[token] = user.UserID;
+
+            return Ok(new
+            {
+                message = "Reset token generated",
+                token = token
+            });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequests request)
+        {
+            if (!PasswordResetStore.ResetTokens.ContainsKey(request.Token))
+                return BadRequest("Invalid token");
+
+            var userId = PasswordResetStore.ResetTokens[request.Token];
+
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+                return NotFound();
+
+            user.Password = request.NewPassword;
+
+            PasswordResetStore.ResetTokens.Remove(request.Token);
+
+            await _context.SaveChangesAsync();
+
+            return Ok("Password reset successfully");
+        }
+
+        [Authorize]
         [HttpGet("me")]
         public async Task<IActionResult> GetMe()
         {
-            var userIdClaim = User.FindFirst("sub");
+            // FIX: Hỗ trợ tìm cả Claim chuẩn của .NET và Claim "sub" của Frontend
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
 
             if (userIdClaim == null)
-                return Unauthorized();
+                return Unauthorized(new { message = "Không tìm thấy thông tin định danh trong Token." });
 
             if (!Guid.TryParse(userIdClaim.Value, out Guid userId))
-                return Unauthorized();
+                return Unauthorized(new { message = "Định dạng ID không hợp lệ." });
 
             var user = await _context.Users
                 .Where(u => u.UserID == userId)
@@ -100,24 +175,19 @@ namespace SWP_BE.Controllers
         {
             var now = DateTime.UtcNow;
             var expires = now.AddHours(3);
+            var roleName = GetRoleName(user.Role);
 
             var claims = new List<Claim>
-    {
-       
-        new Claim(JwtRegisteredClaimNames.Sub, user.UserID.ToString()),
-        new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-        new Claim(JwtRegisteredClaimNames.Iat,
-            new DateTimeOffset(now).ToUnixTimeSeconds().ToString(),
-            ClaimValueTypes.Integer64),
-
-        
-        new Claim("role", GetRoleName(user.Role)),
-        new Claim("aud", "authenticated"),
-
-        
-        new Claim("full_name", user.FullName ?? ""),
-        new Claim("username", user.UserName ?? "")
-    };
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserID.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
+                new Claim(JwtRegisteredClaimNames.Iat, new DateTimeOffset(now).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+                new Claim("role", roleName),
+                new Claim("full_name", user.FullName ?? ""),
+                new Claim("username", user.UserName ?? ""),
+                new Claim(ClaimTypes.Role, roleName), 
+                new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString())
+            };
 
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!)
@@ -129,8 +199,8 @@ namespace SWP_BE.Controllers
             );
 
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"], 
-                audience: "authenticated",
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"] ?? "authenticated",
                 claims: claims,
                 notBefore: now,
                 expires: expires,

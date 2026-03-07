@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using SWP_BE.Data;
 using SWP_BE.Repositories;
 using SWP_BE.Services;
-using System.Text;
-using Microsoft.OpenApi.Models;
 
 namespace SWP_BE
 {
@@ -87,8 +88,12 @@ namespace SWP_BE
             builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
             builder.Services.AddScoped<IProjectService, ProjectService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<IAnnotatorRepository, AnnotatorRepository>();
+            builder.Services.AddScoped<AnnotatorService>();
+            builder.Services.AddScoped<ILabelRepository, LabelRepository>();
+            builder.Services.AddScoped<IAnnotatorRepository, AnnotatorRepository>();
+            builder.Services.AddScoped<AnnotatorService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
-            builder.Services.AddScoped<IScoreService, ScoreService>();
 
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -97,13 +102,15 @@ namespace SWP_BE
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
-                        ValidateAudience = true,
+                        ValidateAudience = true, 
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
                         ValidAudience = builder.Configuration["Jwt:Audience"],
                         IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+                        RoleClaimType = ClaimTypes.Role,
+                        NameClaimType = ClaimTypes.NameIdentifier
                     };
                 });
 
@@ -134,7 +141,7 @@ namespace SWP_BE
             app.UseSwaggerUI(options =>
             {
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "SWP-BE v1.0");
-                options.RoutePrefix = string.Empty;
+                options.RoutePrefix = string.Empty; 
             });
 
             app.UseHttpsRedirection();

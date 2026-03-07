@@ -2,6 +2,10 @@
 using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SWP_BE.Services
 {
@@ -24,6 +28,7 @@ namespace SWP_BE.Services
         public async Task<List<UserScoreResponseDto>> GetAllScores()
         {
             return await _context.Users
+                .AsNoTracking() // Tối ưu hiệu năng
                 .Where(u => u.Role == User.UserRole.Annotator
                          || u.Role == User.UserRole.Reviewer)
                 .Select(u => new UserScoreResponseDto
@@ -32,10 +37,11 @@ namespace SWP_BE.Services
                     UserName = u.UserName,
                     FullName = u.FullName,
                     Role = u.Role,
-
                     CurrentScore = u.Score,
 
-                    TotalScoreChange = u.ReputationLogs
+                    // FIX CS0229: Truy vấn trực tiếp từ DbSet ReputationLogs
+                    TotalScoreChange = _context.ReputationLogs
+                        .Where(r => r.UserID == u.UserID)
                         .Sum(r => (int?)r.ScoreChange) ?? 0,
 
                     TaskCount = u.Role == User.UserRole.Annotator
@@ -48,6 +54,7 @@ namespace SWP_BE.Services
         public async Task<List<UserScoreResponseDto>> GetByRole(User.UserRole role)
         {
             return await _context.Users
+                .AsNoTracking()
                 .Where(u => u.Role == role)
                 .Select(u => new UserScoreResponseDto
                 {
@@ -55,10 +62,11 @@ namespace SWP_BE.Services
                     UserName = u.UserName,
                     FullName = u.FullName,
                     Role = u.Role,
-
                     CurrentScore = u.Score,
 
-                    TotalScoreChange = u.ReputationLogs
+                    // FIX CS0229: Tránh sử dụng navigation property bị lỗi
+                    TotalScoreChange = _context.ReputationLogs
+                        .Where(r => r.UserID == u.UserID)
                         .Sum(r => (int?)r.ScoreChange) ?? 0,
 
                     TaskCount = role == User.UserRole.Annotator
@@ -70,30 +78,30 @@ namespace SWP_BE.Services
 
         public async Task<UserScoreResponseDto?> GetByUserId(Guid userId)
         {
-            var user = await _context.Users
-                .Include(u => u.ReputationLogs)
-                .Include(u => u.AnnotatorTasks)
-                .Include(u => u.ReviewerTasks)
-                .FirstOrDefaultAsync(u => u.UserID == userId);
+            // Truy vấn User mà không dùng Include cho các thuộc tính bị nhập nhằng
+            var query = _context.Users
+                .AsNoTracking()
+                .Where(u => u.UserID == userId);
 
-            if (user == null) return null;
+            return await query
+                .Select(u => new UserScoreResponseDto
+                {
+                    UserId = u.UserID,
+                    UserName = u.UserName,
+                    FullName = u.FullName,
+                    Role = u.Role,
+                    CurrentScore = u.Score,
 
-            return new UserScoreResponseDto
-            {
-                UserId = user.UserID,
-                UserName = user.UserName,
-                FullName = user.FullName,
-                Role = user.Role,
+                    // Tính toán trực tiếp để đảm bảo chính xác
+                    TotalScoreChange = _context.ReputationLogs
+                        .Where(r => r.UserID == u.UserID)
+                        .Sum(r => (int?)r.ScoreChange) ?? 0,
 
-                CurrentScore = user.Score,
-
-                TotalScoreChange = user.ReputationLogs
-                    .Sum(r => r.ScoreChange),
-
-                TaskCount = user.Role == User.UserRole.Annotator
-                    ? user.AnnotatorTasks.Count
-                    : user.ReviewerTasks.Count
-            };
+                    TaskCount = u.Role == User.UserRole.Annotator
+                        ? u.AnnotatorTasks.Count()
+                        : u.ReviewerTasks.Count()
+                })
+                .FirstOrDefaultAsync();
         }
     }
 }

@@ -5,7 +5,11 @@ using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.Models;
 using SWP_BE.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace SWP_BE.Controllers
 {
@@ -25,22 +29,32 @@ namespace SWP_BE.Controllers
             _notificationService = notificationService;
         }
 
-        // ==============================
-        // Pending Review
-        // ==============================
-        [HttpGet("tasks/pending")]
-        public async Task<IActionResult> GetPendingTasks()
+        // ============================================================
+        // 1. LẤY DANH SÁCH TASK (Mặc định lấy ALL, có thể lọc theo Status)
+        // ============================================================
+        [HttpGet("tasks")]
+        public async Task<IActionResult> GetReviewerTasks([FromQuery] string? status)
         {
             var reviewerId = GetCurrentUserId();
-
-            var tasks = await _context.Tasks
-                .Where(t => t.ReviewerID == reviewerId &&
-                            t.Status == "PendingReview")
+            var query = _context.Tasks.Where(t => t.ReviewerID == reviewerId);
+            if (!string.IsNullOrEmpty(status))
+            {
+                if (Enum.TryParse<SWP_BE.Models.Task.TaskStatus>(status, true, out var taskStatus))
+                {
+                    query = query.Where(t => t.Status == taskStatus);
+                }
+                else
+                {
+                    return BadRequest($"Trạng thái '{status}' không hợp lệ.");
+                }
+            }
+            var tasks = await query
                 .Select(t => new
                 {
                     t.TaskID,
                     t.TaskName,
                     t.ProjectID,
+                    Status = t.Status.ToString(),
                     t.Deadline,
                     t.CurrentRound,
                     t.RejectCount
@@ -50,9 +64,9 @@ namespace SWP_BE.Controllers
             return Ok(tasks);
         }
 
-        // ==============================
-        // Task Detail
-        // ==============================
+        // ============================================================
+        // 2. XEM CHI TIẾT TASK (Bao gồm các Item và tọa độ Annotator đã vẽ)
+        // ============================================================
         [HttpGet("tasks/{taskId}")]
         public async Task<IActionResult> GetTaskDetail(Guid taskId)
         {
@@ -68,45 +82,63 @@ namespace SWP_BE.Controllers
                     t.TaskID == taskId &&
                     t.ReviewerID == reviewerId);
 
-            if (task == null)
-                return NotFound();
+            if (task == null) return NotFound("Không tìm thấy Task.");
 
-            if (task.Status != "PendingReview")
-                return BadRequest("Task chưa sẵn sàng review.");
+            if (task.Status != SWP_BE.Models.Task.TaskStatus.PendingReview)
+                return BadRequest("Task không ở trạng thái chờ duyệt.");
 
             return Ok(new
             {
                 task.TaskID,
                 task.TaskName,
-                task.ProjectID,
-                ProjectName = task.Project.ProjectName,
-                task.Status,
+                ProjectName = task.Project?.ProjectName,
+                Status = task.Status.ToString(),
                 task.CurrentRound,
                 task.RejectCount,
-                task.TaskItems
+                Items = task.TaskItems.Select(i => new {
+                    i.ItemID,
+                    i.DataItem.FilePath,
+                    i.DataItem.FileName,
+                    Annotations = i.TaskItemDetails.Select(d => new {
+                        d.IDDetail,
+                        d.AnnotationData,
+                        d.Content,
+                        d.Field,
+                        d.IsApproved
+                    })
+                })
             });
         }
 
-        // ==============================
-        // Approve
-        // ==============================
+        // ============================================================
+        // 3. CHECK ĐÚNG/SAI TỪNG DATA TRONG 1 TASK
+        // ============================================================
+        [HttpPatch("item-detail/{id}/check")]
+        public async Task<IActionResult> ReviewItemDetail(int id, [FromQuery] bool isApproved)
+        {
+            var detail = await _context.TaskItemDetails.FindAsync(id);
+            if (detail == null) return NotFound();
+
+            detail.IsApproved = isApproved;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = isApproved ? "Đã đánh dấu ĐÚNG" : "Đã đánh dấu SAI" });
+        }
+
+        // ============================================================
+        // 4. APPROVE (Duyệt toàn bộ Task)
+        // ============================================================
         [HttpPost("tasks/{taskId}/approve")]
         public async Task<IActionResult> Approve(Guid taskId)
         {
             var reviewerId = GetCurrentUserId();
-
             var task = await _context.Tasks
-                .FirstOrDefaultAsync(t =>
-                    t.TaskID == taskId &&
-                    t.ReviewerID == reviewerId);
+                .FirstOrDefaultAsync(t => t.TaskID == taskId && t.ReviewerID == reviewerId);
 
-            if (task == null)
-                return NotFound();
+            if (task == null || task.Status != SWP_BE.Models.Task.TaskStatus.PendingReview)
+                return BadRequest("Thao tác không hợp lệ.");
 
-            if (task.Status != "PendingReview")
-                return BadRequest("Task không ở trạng thái PendingReview.");
-
-            task.Status = "Approved";
+            task.Status = SWP_BE.Models.Task.TaskStatus.Approved;
             task.CompletedAt = DateTime.UtcNow;
 
             if (task.AnnotatorID.HasValue)
@@ -115,47 +147,35 @@ namespace SWP_BE.Controllers
                 {
                     UserID = task.AnnotatorID.Value,
                     ScoreChange = 10,
-                    Reason = "Task Approved",
-                    TaskID = task.TaskID
+                    Reason = $"Task {task.TaskName} Approved",
+                    TaskID = task.TaskID,
+                    CreatedAt = DateTime.UtcNow
                 });
-
-                await _notificationService.NotifyTaskApproved(
-                    task.AnnotatorID.Value,
-                    task.TaskName
-                );
+                await _notificationService.NotifyTaskApproved(task.AnnotatorID.Value, task.TaskName);
             }
 
             await _context.SaveChangesAsync();
-
             return Ok("Task Approved");
         }
 
-        // ==============================
-        // Reject(3 lần )
-        // ==============================
+        // ============================================================
+        // 5. REJECT (Sử dụng FeedbackDTO để fix lỗi 400)
+        // ============================================================
         [HttpPost("tasks/{taskId}/reject")]
-        public async Task<IActionResult> Reject(Guid taskId, [FromBody] string reason)
+        public async Task<IActionResult> Reject(Guid taskId, [FromBody] FeedbackDTO feedback)
         {
             var reviewerId = GetCurrentUserId();
-
             var task = await _context.Tasks
-                .FirstOrDefaultAsync(t =>
-                    t.TaskID == taskId &&
-                    t.ReviewerID == reviewerId);
+                .FirstOrDefaultAsync(t => t.TaskID == taskId && t.ReviewerID == reviewerId);
 
-            if (task == null)
-                return NotFound();
+            if (task == null || task.Status != SWP_BE.Models.Task.TaskStatus.PendingReview)
+                return BadRequest("Task không hợp lệ hoặc không ở trạng thái chờ duyệt.");
 
-            if (task.Status != "PendingReview")
-                return BadRequest("Task không ở trạng thái PendingReview.");
+            if (string.IsNullOrWhiteSpace(feedback.Comment))
+                return BadRequest("Vui lòng nhập lý do từ chối (Comment).");
 
             task.RejectCount++;
-            task.CurrentRound++;
-
-            if (task.RejectCount >= 3)
-                task.Status = "Failed";
-            else
-                task.Status = "PendingRework";
+            task.Status = SWP_BE.Models.Task.TaskStatus.InProgress;
 
             if (task.AnnotatorID.HasValue)
             {
@@ -163,90 +183,27 @@ namespace SWP_BE.Controllers
                 {
                     UserID = task.AnnotatorID.Value,
                     ScoreChange = -5,
-                    Reason = reason,
-                    TaskID = task.TaskID
+                    Reason = $"Reject lần {task.RejectCount}: {feedback.Comment}",
+                    TaskID = task.TaskID,
+                    CreatedAt = DateTime.UtcNow
                 });
-
-                await _notificationService.NotifyTaskRejected(
-                    task.AnnotatorID.Value,
-                    task.TaskName,
-                    reason
-                );
+                await _notificationService.NotifyTaskRejected(task.AnnotatorID.Value, task.TaskName, feedback.Comment);
             }
 
             await _context.SaveChangesAsync();
-
             return Ok("Task Rejected");
         }
 
-        // ==============================
-        // Feedback
-        // ==============================
-        [HttpPost("tasks/{taskId}/feedback")]
-        public async Task<IActionResult> Feedback(Guid taskId, FeedbackDTO dto)
-        {
-            var reviewerId = GetCurrentUserId();
-
-            var task = await _context.Tasks
-                .FirstOrDefaultAsync(t =>
-                    t.TaskID == taskId &&
-                    t.ReviewerID == reviewerId);
-
-            if (task == null)
-                return NotFound();
-
-            var history = new ReviewHistory
-            {
-                TaskID = taskId,
-                ReviewerID = reviewerId,
-                FinalResult = "Feedback",
-                Field = "General"
-            };
-
-            _context.ReviewHistories.Add(history);
-            await _context.SaveChangesAsync();
-
-            _context.ReviewComments.Add(new ReviewComment
-            {
-                HistoryID = history.HistoryID,
-                Comment = dto.Comment,
-                ErrorRegion = dto.ErrorRegion ?? ""
-            });
-
-            if (task.AnnotatorID.HasValue)
-            {
-                await _notificationService.NotifyFeedback(
-                    task.AnnotatorID.Value,
-                    task.TaskName
-                );
-            }
-
-            await _context.SaveChangesAsync();
-
-            return Ok("Feedback Sent");
-        }
-
-        // ==============================
-        // Notifications
-        // ==============================
-        [HttpGet("notifications")]
-        public async Task<IActionResult> GetNotifications()
-        {
-            var userId = GetCurrentUserId();
-
-            var notifications = await _context.SystemLogs
-                .Where(n => n.UserID == userId &&
-                            n.EntityType == "Task")
-                .OrderByDescending(n => n.CreatedAt)
-                .ToListAsync();
-
-            return Ok(notifications);
-        }
-
-        // ==============================
         private Guid GetCurrentUserId()
         {
-            return Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            // Cập nhật để đọc đúng Token mới
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid userId))
+            {
+                throw new UnauthorizedAccessException("Phiên đăng nhập không hợp lệ hoặc thiếu ID.");
+            }
+            return userId;
         }
     }
 }

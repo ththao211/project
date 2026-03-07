@@ -1,5 +1,7 @@
 ﻿using SWP_BE.Data;
 using SWP_BE.Models;
+using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace SWP_BE.Services
 {
@@ -10,6 +12,7 @@ namespace SWP_BE.Services
         System.Threading.Tasks.Task NotifyTaskApproved(Guid userId, string taskName);
         System.Threading.Tasks.Task NotifyFeedback(Guid userId, string taskName);
     }
+
     public class NotificationService : INotificationService
     {
         private readonly AppDbContext _context;
@@ -21,16 +24,21 @@ namespace SWP_BE.Services
             _emailService = emailService;
         }
 
-        // =============================
-        // PRIVATE HELPER
-        // =============================
-        private async System.Threading.Tasks.Task AddSystemLog(Guid userId, string actionType)
+        // ============================================================
+        // PRIVATE HELPER: Ghi log hệ thống
+        // ============================================================
+        private async System.Threading.Tasks.Task AddSystemLog(Guid userId, string actionType, Guid? targetId = null)
         {
             _context.SystemLogs.Add(new SystemLog
             {
+                // Đảm bảo truyền đúng chuỗi string
                 ActionType = actionType,
                 EntityType = "Task",
-                TargetID = 0,
+
+                // FIX LỖI CS0029: Chuyển Guid thành String để khớp với Model
+                // Nếu targetId null thì dùng Guid.Empty.ToString() thay vì số 0
+                TargetID = (targetId ?? Guid.Empty).ToString(),
+
                 UserID = userId,
                 CreatedAt = DateTime.UtcNow
             });
@@ -38,9 +46,9 @@ namespace SWP_BE.Services
             await _context.SaveChangesAsync();
         }
 
-        // =============================
-        // TASK ASSIGNED
-        // =============================
+        // ============================================================
+        // 1. THÔNG BÁO GIAO TASK (Task Assigned)
+        // ============================================================
         public async System.Threading.Tasks.Task NotifyTaskAssigned(
             Guid userId,
             string taskName,
@@ -61,9 +69,9 @@ namespace SWP_BE.Services
             );
         }
 
-        // =============================
-        // TASK REJECTED
-        // =============================
+        // ============================================================
+        // 2. THÔNG BÁO TASK BỊ REJECT (Rejected)
+        // ============================================================
         public async System.Threading.Tasks.Task NotifyTaskRejected(
             Guid userId,
             string taskName,
@@ -74,18 +82,19 @@ namespace SWP_BE.Services
 
             await AddSystemLog(userId, "Task Rejected");
 
+            // Gửi email thông báo lỗi cho người làm
             await _emailService.SendTaskAssignmentEmailAsync(
                 user.Email,
                 user.FullName,
                 taskName,
-                "Task bị từ chối",
-                reason
+                "Task bị từ chối (Rejected)",
+                $"Lý do: {reason}"
             );
         }
 
-        // =============================
-        // TASK APPROVED
-        // =============================
+        // ============================================================
+        // 3. THÔNG BÁO TASK ĐƯỢC DUYỆT (Approved)
+        // ============================================================
         public async System.Threading.Tasks.Task NotifyTaskApproved(Guid userId, string taskName)
         {
             var user = await _context.Users.FindAsync(userId);
@@ -94,9 +103,9 @@ namespace SWP_BE.Services
             await AddSystemLog(userId, "Task Approved");
         }
 
-        // =============================
-        // FEEDBACK
-        // =============================
+        // ============================================================
+        // 4. THÔNG BÁO CÓ PHẢN HỒI (Feedback)
+        // ============================================================
         public async System.Threading.Tasks.Task NotifyFeedback(Guid userId, string taskName)
         {
             var user = await _context.Users.FindAsync(userId);
@@ -105,5 +114,4 @@ namespace SWP_BE.Services
             await AddSystemLog(userId, "Task Feedback");
         }
     }
-
 }
