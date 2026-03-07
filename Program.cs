@@ -65,6 +65,7 @@ namespace SWP_BE
             builder.Services.AddScoped<AnnotatorService>();
             builder.Services.AddScoped<IReputationRepository, ReputationRepository>();
             builder.Services.AddScoped<ReputationService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
 
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

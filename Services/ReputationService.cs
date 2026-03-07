@@ -23,6 +23,7 @@ namespace SWP_BE.Services
             int? appliedRuleId = null;
 
             // --- LOGIC THEO BẢNG ĐIỂM CỦA BẠN ---
+            // --- LOGIC TÍNH TOÁN ĐIỂM BIẾN ĐỘNG (scoreDelta) ---
             if (task.Status == Models.Task.TaskStatus.Approved)
             {
                 switch (task.RejectCount)
@@ -35,13 +36,22 @@ namespace SWP_BE.Services
                     case 1: // Sau sửa lần 1
                         scoreDelta = 0;
                         reason = "Approve sau sửa lần 1";
-                        if (task.RateComplete > 95) { scoreDelta = 2; reason += " (+2đ Bonus HighRate)"; }
+                        if (task.RateComplete > 95)
+                        {
+                            scoreDelta = 2;
+                            reason += " (+2đ Bonus HighRate)";
+                            appliedRuleId = rules["Bonus_HighRate"].RuleID;
+                        }
                         break;
                     case 2: // Sau sửa lần 2
                         scoreDelta = rules["Penalty_Reject_2"].Value; // -5
                         reason = "Approve sau sửa lần 2";
                         appliedRuleId = rules["Penalty_Reject_2"].RuleID;
-                        if (task.RateComplete > 95) { scoreDelta += 2; reason += " (+2đ Bonus HighRate)"; }
+                        if (task.RateComplete > 95)
+                        {
+                            scoreDelta += 2;
+                            reason += " (+2đ Bonus HighRate)";
+                        }
                         break;
                     case 3: // Sau sửa lần 3
                         scoreDelta = rules["Penalty_Reject_3"].Value; // -10
@@ -53,24 +63,35 @@ namespace SWP_BE.Services
             else if (task.Status == Models.Task.TaskStatus.Fail)
             {
                 scoreDelta = rules["Penalty_Task_Fail"].Value; // -20
-                reason = "Task bị Fail (Bị Reject quá 3 lần hoặc quá hạn)";
+                reason = "Task bị Fail (Reject lần 4)";
                 appliedRuleId = rules["Penalty_Task_Fail"].RuleID;
             }
 
-            // --- CẬP NHẬT ĐIỂM ---
+            // --- LOGIC KIỂM TRA NGƯỠNG 0 - 100 ---
             int oldScore = user.Score;
-            user.Score = Math.Clamp(user.Score + scoreDelta, 0, 100); // Đảm bảo điểm từ 0-100
+            // Tính toán điểm mới và ép vào khoảng [0, 100]
+            int newScore = oldScore + scoreDelta;
 
-            // --- LƯU LOG ---
+            if (newScore > 100) newScore = 100; // Chặn trên 100
+            if (newScore < 0) newScore = 0;     // Chặn dưới 0
+
+            // Gán điểm mới cho User
+            user.Score = newScore;
+
+            // Tính số điểm thực tế thay đổi sau khi đã chặn ngưỡng
+            int actualChange = newScore - oldScore;
+
+            // --- LƯU LOG VỚI SỐ ĐIỂM THỰC TẾ ---
             var log = new ReputationLog
             {
                 UserID = userId,
                 OldScore = oldScore,
-                NewScore = user.Score,
-                ScoreChange = scoreDelta,
+                NewScore = newScore,
+                ScoreChange = actualChange, // Lưu số điểm thực tế biến động
                 Reason = reason,
                 TaskID = task.TaskID,
-                RuleID = appliedRuleId
+                RuleID = appliedRuleId,
+                CreatedAt = DateTime.UtcNow
             };
 
             await _repo.AddLogAsync(log);

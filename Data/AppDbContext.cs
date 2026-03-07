@@ -66,7 +66,9 @@ namespace SWP_BE.Data
                 new ReputationRule { RuleID = 7, RuleName = "Low_Threshold", Value = 20, Category = "Threshold", Description = "Ngưỡng 20 - 50đ" },
                 new ReputationRule { RuleID = 8, RuleName = "Max_Task_High", Value = 3, Category = "Limit", Description = "Max 3 task" },
                 new ReputationRule { RuleID = 9, RuleName = "Max_Task_Normal", Value = 2, Category = "Limit", Description = "Max 2 task" },
-                new ReputationRule { RuleID = 10, RuleName = "Max_Task_Warning", Value = 1, Category = "Limit", Description = "Max 1 task" }
+                new ReputationRule { RuleID = 10, RuleName = "Max_Task_Warning", Value = 1, Category = "Limit", Description = "Max 1 task" },
+                // ... các rule cũ
+                new ReputationRule { RuleID = 11, RuleName = "Max_Consecutive_Fails", Value = 3, Category = "Limit", Description = "Số task Fail liên tiếp để bị khóa tài khoản" }
             );
         }
     }
