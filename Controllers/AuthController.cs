@@ -7,6 +7,7 @@ using SWP_BE.Data;
 using SWP_BE.DTOs;
 using SWP_BE.DTOs.Login;
 using SWP_BE.Models;
+using SWP_BE.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -20,12 +21,23 @@ namespace SWP_BE.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
-        public AuthController(AppDbContext context, IConfiguration configuration)
+        public AuthController(AppDbContext context, IConfiguration configuration, IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
+            _emailService = emailService;
         }
+
+        private readonly List<string> DefaultPasswords = new()
+        {
+             "111111",
+             "000000",
+             "222222",
+             "123456",
+             "12345"
+        };
 
         /// <summary>
         /// Đăng nhập vào hệ thống
@@ -49,7 +61,10 @@ namespace SWP_BE.Controllers
             }
 
             // LOGIC TỪ FILE 1: Kiểm tra mật khẩu mặc định lần đầu đăng nhập
-            if (BCrypt.Net.BCrypt.Verify("123456", user.Password))
+            bool isDefaultPassword = DefaultPasswords
+            .Any(p => BCrypt.Net.BCrypt.Verify(p, user.Password));
+
+            if (isDefaultPassword)
             {
                 return Ok(new
                 {
@@ -57,7 +72,7 @@ namespace SWP_BE.Controllers
                     message = "You must change password before using system"
                 });
             }
-
+           
             var token = GenerateJwtToken(user);
             string roleName = GetRoleName(user.Role);
 
@@ -105,7 +120,7 @@ namespace SWP_BE.Controllers
                 return BadRequest("Old password incorrect");
             }
 
-            user.Password = request.NewPassword;
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             // Lưu ý: Đáng lẽ NewPassword nên được Hash lại thay vì lưu plain text. 
             // Bạn có thể cân nhắc sửa thành: user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
@@ -136,11 +151,15 @@ namespace SWP_BE.Controllers
             // Lưu ý: Đảm bảo bạn đã có class PasswordResetStore ở đâu đó trong project
             PasswordResetStore.ResetTokens[token] = user.UserID;
 
-            return Ok(new
-            {
-                message = "Reset token generated",
-                token = token
-            });
+            var resetLink = $"http://localhost:3000/reset-password?token={token}";
+
+            await _emailService.SendPasswordResetEmailAsync(
+                user.Email,
+                user.FullName,
+                resetLink
+            );
+
+            return Ok("Reset password email sent");
         }
 
         /// <summary>

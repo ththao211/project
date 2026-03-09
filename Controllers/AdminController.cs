@@ -53,7 +53,7 @@ namespace SWP_BE.Controllers
             };
 
             _context.Users.Add(user);
-            await LogActivity("Create User", user.UserID);
+            await LogActivity($"Create {user.Role} Account: {user.UserName}", user.UserID);
             await _context.SaveChangesAsync();
 
             return Ok(new
@@ -308,7 +308,6 @@ namespace SWP_BE.Controllers
             {
                 Id = Guid.NewGuid(),
                 Action = action,
-                TargetUserId = targetUserId,
                 PerformedBy = Guid.TryParse(currentUserIdStr, out var parsedId) ? parsedId : (Guid?)null,
                 CreatedAt = DateTime.UtcNow
             };
@@ -380,12 +379,29 @@ namespace SWP_BE.Controllers
         public async Task<IActionResult> FilterLogs(Guid? userId, string? action, DateTime? fromDate, DateTime? toDate)
         {
             var query = _context.ActivityLogs.AsQueryable();
-            if (userId.HasValue) query = query.Where(x => x.PerformedBy == userId.Value);
-            if (!string.IsNullOrEmpty(action)) query = query.Where(x => x.Action.Contains(action));
-            if (fromDate.HasValue) query = query.Where(x => x.CreatedAt >= fromDate.Value);
-            if (toDate.HasValue) query = query.Where(x => x.CreatedAt <= toDate.Value);
 
-            var logs = await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
+            if (userId.HasValue)
+                query = query.Where(x => x.PerformedBy == userId.Value);
+
+            if (!string.IsNullOrEmpty(action))
+                query = query.Where(x => x.Action.Contains(action));
+
+            if (fromDate.HasValue)
+                query = query.Where(x => x.CreatedAt >= fromDate.Value);
+
+            if (toDate.HasValue)
+                query = query.Where(x => x.CreatedAt <= toDate.Value);
+
+            var logs = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Action,
+                    PerformedBy = x.PerformedBy,
+                    x.CreatedAt
+                })
+                .ToListAsync();
             return Ok(logs);
         }
     }
