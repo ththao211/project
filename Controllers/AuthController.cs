@@ -30,6 +30,15 @@ namespace SWP_BE.Controllers
             _emailService = emailService;
         }
 
+        private readonly List<string> DefaultPasswords = new()
+        {
+             "111111",
+             "000000",
+             "222222",
+             "123456",
+             "12345"
+        };
+
         /// <summary>
         /// Đăng nhập vào hệ thống
         /// </summary>
@@ -52,7 +61,10 @@ namespace SWP_BE.Controllers
             }
 
             // LOGIC TỪ FILE 1: Kiểm tra mật khẩu mặc định lần đầu đăng nhập
-            if (BCrypt.Net.BCrypt.Verify("123456", user.Password))
+            bool isDefaultPassword = DefaultPasswords
+            .Any(p => BCrypt.Net.BCrypt.Verify(p, user.Password));
+
+            if (isDefaultPassword)
             {
                 return Ok(new
                 {
@@ -60,7 +72,7 @@ namespace SWP_BE.Controllers
                     message = "You must change password before using system"
                 });
             }
-
+           
             var token = GenerateJwtToken(user);
             string roleName = GetRoleName(user.Role);
 
@@ -108,7 +120,7 @@ namespace SWP_BE.Controllers
                 return BadRequest("Old password incorrect");
             }
 
-            user.Password = request.NewPassword;
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             // Lưu ý: Đáng lẽ NewPassword nên được Hash lại thay vì lưu plain text. 
             // Bạn có thể cân nhắc sửa thành: user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
