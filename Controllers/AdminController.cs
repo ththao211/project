@@ -392,16 +392,21 @@ namespace SWP_BE.Controllers
             if (toDate.HasValue)
                 query = query.Where(x => x.CreatedAt <= toDate.Value);
 
+
             var logs = await query
+                .Join(_context.Users,
+                    log => log.PerformedBy,    // Khóa ngoại ở bảng ActivityLogs
+                    user => user.UserID,       // Khóa chính ở bảng Users
+                    (log, user) => new         // Kết quả trả về
+                    {
+                        log.Id,
+                        log.Action,
+                        PerformedByName = user.FullName,         // <--- LẤY FULLNAME
+                        log.CreatedAt
+                    })
                 .OrderByDescending(x => x.CreatedAt)
-                .Select(x => new
-                {
-                    x.Id,
-                    x.Action,
-                    PerformedBy = x.PerformedBy,
-                    x.CreatedAt
-                })
                 .ToListAsync();
+
             return Ok(logs);
         }
     }

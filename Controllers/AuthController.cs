@@ -61,20 +61,20 @@ namespace SWP_BE.Controllers
             }
 
             // LOGIC TỪ FILE 1: Kiểm tra mật khẩu mặc định lần đầu đăng nhập
+
             bool isDefaultPassword = DefaultPasswords
             .Any(p => BCrypt.Net.BCrypt.Verify(p, user.Password));
-
+            var token = GenerateJwtToken(user);
+            string roleName = GetRoleName(user.Role);
             if (isDefaultPassword)
             {
                 return Ok(new
                 {
+                    Token = token,
                     requirePasswordChange = true,
                     message = "You must change password before using system"
                 });
             }
-           
-            var token = GenerateJwtToken(user);
-            string roleName = GetRoleName(user.Role);
 
             var responseData = new LoginResponseDTO
             {
