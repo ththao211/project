@@ -41,6 +41,23 @@ namespace SWP_BE.Controllers
                 IsActive = true,
                 Score = 100
             };
+            // 2. LOGIC KHỞI TẠO STAT: Dựa trên Role
+            if (user.Role == UserRole.Annotator)
+            {
+                // Khởi tạo bảng thống kê cho Annotator
+                user.AnnotatorStat = new AnnotatorStat
+                {
+                    UserID = user.UserID // Dùng chung ID với User
+                };
+            }
+            else if (user.Role == UserRole.Reviewer)
+            {
+                // Khởi tạo bảng thống kê cho Reviewer
+                user.ReviewerStat = new ReviewerStat
+                {
+                    UserID = user.UserID
+                };
+            }
 
             _context.Users.Add(user);
             await LogActivity("Create User", user.UserID);
