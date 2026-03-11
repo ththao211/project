@@ -9,6 +9,8 @@ using static SWP_BE.Models.User;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Http;
 
 namespace SWP_BE.Controllers
 {
@@ -19,8 +21,16 @@ namespace SWP_BE.Controllers
         private readonly AppDbContext _context;
         public AdminController(AppDbContext context) { _context = context; }
 
-        //[Authorize(Roles = "Admin")]
+        /// <summary>
+        /// Tạo mới một người dùng (Admin)
+        /// </summary>
+        /// <param name="dto">Thông tin người dùng cần tạo</param>
+        /// <response code="200">Tạo người dùng thành công, trả về userId</response>
+        /// <response code="400">Dữ liệu đầu vào không hợp lệ hoặc Username đã tồn tại</response>
+        [Authorize(Roles = "Admin")]
         [HttpPost("create-user")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
         {
             if (!ModelState.IsValid)
@@ -60,7 +70,7 @@ namespace SWP_BE.Controllers
             }
 
             _context.Users.Add(user);
-            await LogActivity("Create User", user.UserID);
+            await LogActivity($"Create {user.Role} Account: {user.UserName}", user.UserID);
             await _context.SaveChangesAsync();
 
             return Ok(new
@@ -70,8 +80,18 @@ namespace SWP_BE.Controllers
             });
         }
 
+        /// <summary>
+        /// Bật/Tắt trạng thái hoạt động của người dùng
+        /// </summary>
+        /// <param name="id">ID của người dùng cần thay đổi trạng thái</param>
+        /// <response code="200">Cập nhật trạng thái thành công</response>
+        /// <response code="400">Lỗi khi thao tác (VD: tự vô hiệu hóa chính mình)</response>
+        /// <response code="404">Không tìm thấy người dùng</response>
         [Authorize(Roles = "Admin")]
         [HttpPatch("toggle-status/{id}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> ToggleStatus(Guid id)
         {
             var user = await _context.Users.FindAsync(id);
@@ -90,8 +110,19 @@ namespace SWP_BE.Controllers
             return Ok(new { message = "User status updated", isActive = user.IsActive });
         }
 
+        /// <summary>
+        /// Đặt lại mật khẩu cho người dùng
+        /// </summary>
+        /// <param name="id">ID của người dùng</param>
+        /// <param name="dto">Chứa mật khẩu mới</param>
+        /// <response code="200">Đặt lại mật khẩu thành công</response>
+        /// <response code="400">Mật khẩu mới không được để trống</response>
+        /// <response code="404">Không tìm thấy người dùng</response>
         [Authorize(Roles = "Admin")]
         [HttpPost("reset-password/{id}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> ResetPassword(Guid id, [FromBody] UpdateRoleDTO dto)
         {
             var user = await _context.Users.FindAsync(id);
@@ -104,15 +135,25 @@ namespace SWP_BE.Controllers
             return Ok("Password reset successfully.");
         }
 
+        /// <summary>
+        /// Lấy danh sách tất cả người dùng đang hoạt động
+        /// </summary>
+        /// <response code="200">Danh sách người dùng đang hoạt động</response>
         [Authorize(Roles = "Admin")]
         [HttpGet("all-users")]
+        [ProducesResponseType(200)]
         public async Task<IActionResult> GetAllUsers()
         {
             return Ok(await _context.Users.Where(u => u.IsActive).ToListAsync());
         }
 
+        /// <summary>
+        /// Lấy danh sách tất cả các Role trong hệ thống
+        /// </summary>
+        /// <response code="200">Danh sách các Role</response>
         [Authorize(Roles = "Admin")]
         [HttpGet("/api/admin/all-roles")]
+        [ProducesResponseType(200)]
         public IActionResult GetAllRoles()
         {
             var roles = Enum.GetValues(typeof(UserRole))
@@ -121,8 +162,18 @@ namespace SWP_BE.Controllers
             return Ok(roles);
         }
 
+        /// <summary>
+        /// Lọc danh sách người dùng theo Role, trạng thái và từ khóa
+        /// </summary>
+        /// <param name="role">Role ID (1-4)</param>
+        /// <param name="isActive">Trạng thái hoạt động</param>
+        /// <param name="keyword">Từ khóa tìm kiếm theo Username, FullName hoặc Email</param>
+        /// <response code="200">Danh sách người dùng sau khi lọc</response>
+        /// <response code="400">Role không hợp lệ</response>
         [Authorize(Roles = "Admin,Manager")]
         [HttpGet("/api/admin/filter-by-roles")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
         public async Task<IActionResult> FilterUsers(int? role, bool? isActive, string? keyword)
         {
             var query = _context.Users.AsQueryable();
@@ -161,9 +212,19 @@ namespace SWP_BE.Controllers
             return Ok(result);
         }
 
-        // --- ĐÂY LÀ HÀM ĐÃ ĐƯỢC THÊM LOGIC BẢO MẬT ---
+        /// <summary>
+        /// Phân quyền (gán Role) cho người dùng
+        /// </summary>
+        /// <param name="id">ID người dùng</param>
+        /// <param name="newRole">Role mới cần gán</param>
+        /// <response code="200">Cập nhật quyền thành công</response>
+        /// <response code="400">Role không hợp lệ hoặc vi phạm logic phân quyền</response>
+        /// <response code="404">Không tìm thấy người dùng</response>
         [Authorize(Roles = "Admin")]
         [HttpPatch("assign-role/{id}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> AssignRole(Guid id, [FromBody] UserRole newRole)
         {
             var user = await _context.Users.FindAsync(id);
@@ -172,18 +233,15 @@ namespace SWP_BE.Controllers
             if (!Enum.IsDefined(typeof(UserRole), newRole))
                 return BadRequest("Invalid role.");
 
-            // Lấy ID của Admin đang thực hiện lệnh này
             var currentUserIdStr = User.FindFirst("id")?.Value
                                 ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                                 ?? User.FindFirst("sub")?.Value;
 
             if (Guid.TryParse(currentUserIdStr, out var currentUserId))
             {
-                // 1. Không cho tự hạ cấp chính mình
                 if (user.UserID == currentUserId && newRole != UserRole.Admin)
                     return BadRequest("You cannot downgrade your own Admin role.");
 
-                // 2. Không cho hạ cấp một Admin khác
                 if (user.Role == UserRole.Admin && user.UserID != currentUserId && newRole != UserRole.Admin)
                     return BadRequest("Cannot downgrade another Admin.");
             }
@@ -194,8 +252,21 @@ namespace SWP_BE.Controllers
             return Ok("Role assigned successfully.");
         }
 
+        /// <summary>
+        /// Cập nhật thông tin cá nhân của người dùng
+        /// </summary>
+        /// <param name="id">ID người dùng cần cập nhật</param>
+        /// <param name="dto">Thông tin mới</param>
+        /// <response code="200">Cập nhật thành công</response>
+        /// <response code="400">Dữ liệu không hợp lệ</response>
+        /// <response code="403">Không có quyền truy cập</response>
+        /// <response code="404">Không tìm thấy người dùng</response>
         [Authorize]
         [HttpPut("update-user-info")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> UpdateUser(Guid id, UpdateUserDTO dto)
         {
             var user = await _context.Users.FindAsync(id);
@@ -222,8 +293,16 @@ namespace SWP_BE.Controllers
             return Ok("Updated");
         }
 
+        /// <summary>
+        /// Vô hiệu hóa người dùng (Soft Delete)
+        /// </summary>
+        /// <param name="id">ID người dùng</param>
+        /// <response code="200">Vô hiệu hóa thành công</response>
+        /// <response code="404">Không tìm thấy người dùng</response>
         [Authorize(Roles = "Admin")]
         [HttpDelete("delete-user/{id}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
             var user = await _context.Users.FindAsync(id);
@@ -237,13 +316,15 @@ namespace SWP_BE.Controllers
 
         private System.Threading.Tasks.Task LogActivity(string action, Guid targetUserId)
         {
-            var currentUserIdStr = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            // Kết hợp logic lấy Claim của File 1, đảm bảo tương thích tốt nhất
+            var currentUserIdStr = User.FindFirst("id")?.Value
+                                ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
             var log = new ActivityLog
             {
                 Id = Guid.NewGuid(),
                 Action = action,
-                TargetUserId = targetUserId,
                 PerformedBy = Guid.TryParse(currentUserIdStr, out var parsedId) ? parsedId : (Guid?)null,
                 CreatedAt = DateTime.UtcNow
             };
@@ -252,8 +333,13 @@ namespace SWP_BE.Controllers
             return System.Threading.Tasks.Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Lấy thông tin cấu hình hệ thống
+        /// </summary>
+        /// <response code="200">Trả về danh sách cấu hình hệ thống</response>
         [Authorize(Roles = "Admin")]
         [HttpGet("/api/admin/system-configs")]
+        [ProducesResponseType(200)]
         public async Task<IActionResult> GetConfigs()
         {
             var configs = await _context.SystemConfigs
@@ -263,8 +349,17 @@ namespace SWP_BE.Controllers
             return Ok(configs);
         }
 
+        /// <summary>
+        /// Cập nhật cấu hình hệ thống
+        /// </summary>
+        /// <param name="id">ID cấu hình</param>
+        /// <param name="dto">Dữ liệu cấu hình mới</param>
+        /// <response code="200">Cập nhật cấu hình thành công</response>
+        /// <response code="404">Không tìm thấy cấu hình</response>
         [Authorize(Roles = "Admin")]
         [HttpPut("/api/admin/update-configs/{id}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> UpdateConfig(int id, [FromBody] SystemConfig dto)
         {
             var config = await _context.SystemConfigs.FindAsync(id);
@@ -287,17 +382,48 @@ namespace SWP_BE.Controllers
             return Ok("System configuration updated successfully.");
         }
 
+        /// <summary>
+        /// Lọc danh sách System Logs
+        /// </summary>
+        /// <param name="userId">ID người thực hiện</param>
+        /// <param name="action">Hành động (chứa từ khóa)</param>
+        /// <param name="fromDate">Từ ngày</param>
+        /// <param name="toDate">Đến ngày</param>
+        /// <response code="200">Danh sách Logs sau khi lọc</response>
         [Authorize(Roles = "Admin")]
         [HttpGet("/api/admin/system-logs/filter")]
+        [ProducesResponseType(200)]
         public async Task<IActionResult> FilterLogs(Guid? userId, string? action, DateTime? fromDate, DateTime? toDate)
         {
             var query = _context.ActivityLogs.AsQueryable();
-            if (userId.HasValue) query = query.Where(x => x.PerformedBy == userId.Value);
-            if (!string.IsNullOrEmpty(action)) query = query.Where(x => x.Action.Contains(action));
-            if (fromDate.HasValue) query = query.Where(x => x.CreatedAt >= fromDate.Value);
-            if (toDate.HasValue) query = query.Where(x => x.CreatedAt <= toDate.Value);
 
-            var logs = await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
+            if (userId.HasValue)
+                query = query.Where(x => x.PerformedBy == userId.Value);
+
+            if (!string.IsNullOrEmpty(action))
+                query = query.Where(x => x.Action.Contains(action));
+
+            if (fromDate.HasValue)
+                query = query.Where(x => x.CreatedAt >= fromDate.Value);
+
+            if (toDate.HasValue)
+                query = query.Where(x => x.CreatedAt <= toDate.Value);
+
+
+            var logs = await query
+                .Join(_context.Users,
+                    log => log.PerformedBy,    // Khóa ngoại ở bảng ActivityLogs
+                    user => user.UserID,       // Khóa chính ở bảng Users
+                    (log, user) => new         // Kết quả trả về
+                    {
+                        log.Id,
+                        log.Action,
+                        PerformedByName = user.FullName,         // <--- LẤY FULLNAME
+                        log.CreatedAt
+                    })
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
+
             return Ok(logs);
         }
     }

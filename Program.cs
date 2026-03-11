@@ -63,9 +63,10 @@ namespace SWP_BE
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<IAnnotatorRepository, AnnotatorRepository>();
             builder.Services.AddScoped<AnnotatorService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
             builder.Services.AddScoped<IReputationRepository, ReputationRepository>();
             builder.Services.AddScoped<ReputationService>();
-            builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<IProgressService, ProgressService>();
 
             // ===== JWT AUTH =====
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

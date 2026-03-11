@@ -50,6 +50,31 @@ namespace SWP_BE.Migrations
                     b.ToTable("ActivityLogs");
                 });
 
+            modelBuilder.Entity("SWP_BE.Models.AnnotatorStat", b =>
+                {
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double>("AvgCompletionHours")
+                        .HasColumnType("float");
+
+                    b.Property<int>("CurrentPerfectStreak")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FirstTryApprovedTasks")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalCompletedTasks")
+                        .HasColumnType("int");
+
+                    b.Property<double>("TotalWorkingHours")
+                        .HasColumnType("float");
+
+                    b.HasKey("UserID");
+
+                    b.ToTable("AnnotatorStats");
+                });
+
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
                 {
                     b.Property<Guid>("DataID")
@@ -343,7 +368,7 @@ namespace SWP_BE.Migrations
                             Description = "Hoàn thành ngay lần đầu (0 reject)",
                             IsActive = true,
                             RuleName = "Reward_Perfect",
-                            UpdatedAt = new DateTime(2026, 3, 7, 23, 11, 3, 784, DateTimeKind.Local).AddTicks(5971),
+                            UpdatedAt = new DateTime(2026, 3, 11, 23, 13, 58, 751, DateTimeKind.Local).AddTicks(5542),
                             Value = 20
                         },
                         new
@@ -353,7 +378,7 @@ namespace SWP_BE.Migrations
                             Description = "Thưởng thêm nếu RateComplete > 95%",
                             IsActive = true,
                             RuleName = "Bonus_HighRate",
-                            UpdatedAt = new DateTime(2026, 3, 7, 23, 11, 3, 784, DateTimeKind.Local).AddTicks(5986),
+                            UpdatedAt = new DateTime(2026, 3, 11, 23, 13, 58, 751, DateTimeKind.Local).AddTicks(5557),
                             Value = 2
                         },
                         new
@@ -363,7 +388,7 @@ namespace SWP_BE.Migrations
                             Description = "Trừ điểm khi Approve ở lần sửa 2",
                             IsActive = true,
                             RuleName = "Penalty_Reject_2",
-                            UpdatedAt = new DateTime(2026, 3, 7, 23, 11, 3, 784, DateTimeKind.Local).AddTicks(5987),
+                            UpdatedAt = new DateTime(2026, 3, 11, 23, 13, 58, 751, DateTimeKind.Local).AddTicks(5558),
                             Value = -5
                         },
                         new
@@ -373,7 +398,7 @@ namespace SWP_BE.Migrations
                             Description = "Trừ điểm khi Approve ở lần sửa 3",
                             IsActive = true,
                             RuleName = "Penalty_Reject_3",
-                            UpdatedAt = new DateTime(2026, 3, 7, 23, 11, 3, 784, DateTimeKind.Local).AddTicks(5988),
+                            UpdatedAt = new DateTime(2026, 3, 11, 23, 13, 58, 751, DateTimeKind.Local).AddTicks(5559),
                             Value = -10
                         },
                         new
@@ -383,7 +408,7 @@ namespace SWP_BE.Migrations
                             Description = "Task bị Fail (Reject lần 4)",
                             IsActive = true,
                             RuleName = "Penalty_Task_Fail",
-                            UpdatedAt = new DateTime(2026, 3, 7, 23, 11, 3, 784, DateTimeKind.Local).AddTicks(5989),
+                            UpdatedAt = new DateTime(2026, 3, 11, 23, 13, 58, 751, DateTimeKind.Local).AddTicks(5560),
                             Value = -20
                         },
                         new
@@ -393,7 +418,7 @@ namespace SWP_BE.Migrations
                             Description = "Ngưỡng >= 50đ",
                             IsActive = true,
                             RuleName = "High_Threshold",
-                            UpdatedAt = new DateTime(2026, 3, 7, 23, 11, 3, 784, DateTimeKind.Local).AddTicks(5991),
+                            UpdatedAt = new DateTime(2026, 3, 11, 23, 13, 58, 751, DateTimeKind.Local).AddTicks(5561),
                             Value = 50
                         },
                         new
@@ -403,7 +428,7 @@ namespace SWP_BE.Migrations
                             Description = "Ngưỡng 20 - 50đ",
                             IsActive = true,
                             RuleName = "Low_Threshold",
-                            UpdatedAt = new DateTime(2026, 3, 7, 23, 11, 3, 784, DateTimeKind.Local).AddTicks(5992),
+                            UpdatedAt = new DateTime(2026, 3, 11, 23, 13, 58, 751, DateTimeKind.Local).AddTicks(5562),
                             Value = 20
                         },
                         new
@@ -413,7 +438,7 @@ namespace SWP_BE.Migrations
                             Description = "Max 3 task",
                             IsActive = true,
                             RuleName = "Max_Task_High",
-                            UpdatedAt = new DateTime(2026, 3, 7, 23, 11, 3, 784, DateTimeKind.Local).AddTicks(5993),
+                            UpdatedAt = new DateTime(2026, 3, 11, 23, 13, 58, 751, DateTimeKind.Local).AddTicks(5563),
                             Value = 3
                         },
                         new
@@ -423,7 +448,7 @@ namespace SWP_BE.Migrations
                             Description = "Max 2 task",
                             IsActive = true,
                             RuleName = "Max_Task_Normal",
-                            UpdatedAt = new DateTime(2026, 3, 7, 23, 11, 3, 784, DateTimeKind.Local).AddTicks(5994),
+                            UpdatedAt = new DateTime(2026, 3, 11, 23, 13, 58, 751, DateTimeKind.Local).AddTicks(5564),
                             Value = 2
                         },
                         new
@@ -433,7 +458,7 @@ namespace SWP_BE.Migrations
                             Description = "Max 1 task",
                             IsActive = true,
                             RuleName = "Max_Task_Warning",
-                            UpdatedAt = new DateTime(2026, 3, 7, 23, 11, 3, 784, DateTimeKind.Local).AddTicks(5995),
+                            UpdatedAt = new DateTime(2026, 3, 11, 23, 13, 58, 751, DateTimeKind.Local).AddTicks(5565),
                             Value = 1
                         },
                         new
@@ -443,7 +468,7 @@ namespace SWP_BE.Migrations
                             Description = "Số task Fail liên tiếp để bị khóa tài khoản",
                             IsActive = true,
                             RuleName = "Max_Consecutive_Fails",
-                            UpdatedAt = new DateTime(2026, 3, 7, 23, 11, 3, 784, DateTimeKind.Local).AddTicks(5997),
+                            UpdatedAt = new DateTime(2026, 3, 11, 23, 13, 58, 751, DateTimeKind.Local).AddTicks(5566),
                             Value = 3
                         });
                 });
@@ -509,6 +534,28 @@ namespace SWP_BE.Migrations
                     b.HasIndex("TaskID");
 
                     b.ToTable("ReviewHistories");
+                });
+
+            modelBuilder.Entity("SWP_BE.Models.ReviewerStat", b =>
+                {
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double>("AvgReviewHours")
+                        .HasColumnType("float");
+
+                    b.Property<int>("DisputedTasks")
+                        .HasColumnType("int");
+
+                    b.Property<double>("TotalReviewHours")
+                        .HasColumnType("float");
+
+                    b.Property<int>("TotalReviewedTasks")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserID");
+
+                    b.ToTable("ReviewerStats");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.SystemConfig", b =>
@@ -754,6 +801,17 @@ namespace SWP_BE.Migrations
                     b.Navigation("TargetUser");
                 });
 
+            modelBuilder.Entity("SWP_BE.Models.AnnotatorStat", b =>
+                {
+                    b.HasOne("SWP_BE.Models.User", "User")
+                        .WithOne("AnnotatorStat")
+                        .HasForeignKey("SWP_BE.Models.AnnotatorStat", "UserID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
                 {
                     b.HasOne("SWP_BE.Models.Project", "Project")
@@ -888,6 +946,17 @@ namespace SWP_BE.Migrations
                     b.Navigation("Task");
                 });
 
+            modelBuilder.Entity("SWP_BE.Models.ReviewerStat", b =>
+                {
+                    b.HasOne("SWP_BE.Models.User", "User")
+                        .WithOne("ReviewerStat")
+                        .HasForeignKey("SWP_BE.Models.ReviewerStat", "UserID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SWP_BE.Models.SystemConfig", b =>
                 {
                     b.HasOne("SWP_BE.Models.User", "Admin")
@@ -986,11 +1055,15 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.User", b =>
                 {
+                    b.Navigation("AnnotatorStat");
+
                     b.Navigation("AnnotatorTasks");
 
                     b.Navigation("ManagedProjects");
 
                     b.Navigation("ReputationLogs");
+
+                    b.Navigation("ReviewerStat");
 
                     b.Navigation("ReviewerTasks");
                 });
