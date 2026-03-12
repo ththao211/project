@@ -102,7 +102,7 @@ namespace SWP_BE.Services
         {
             var task = await _repo.GetTaskByIdAsync(taskId, userId);
             if (task == null) return (false, "Task không tồn tại.");
-            if (isResubmit && task.CurrentRound >= 3) return (false, "Đã quá 3 lần nộp lại.");
+            if (isResubmit && task.CurrentRound > 3) return (false, "Đã quá 3 lần nộp lại.");
 
             var items = task.TaskItems ?? new List<TaskItem>();
             if (items.Any(ti => !ti.IsFlagged && !(ti.TaskItemDetails?.Any() ?? false)))

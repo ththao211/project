@@ -25,14 +25,14 @@ namespace SWP_BE.Services
             // --- LOGIC TÍNH TOÁN ĐIỂM BIẾN ĐỘNG (scoreDelta) ---
             if (task.Status == Models.Task.TaskStatus.Approved)
             {
-                switch (task.RejectCount)
+                switch (task.CurrentRound)
                 {
-                    case 0: // Perfect
+                    case 1: // Perfect
                         scoreDelta = rules["Reward_Perfect"].Value; // +20
                         reason = "Perfect: Hoàn thành ngay từ đầu";
                         appliedRuleId = rules["Reward_Perfect"].RuleID;
                         break;
-                    case 1: // Sau sửa lần 1
+                    case 2: // Sau sửa lần 1
                         scoreDelta = 0;
                         reason = "Approve sau sửa lần 1";
                         if (task.RateComplete > 95)
@@ -42,7 +42,7 @@ namespace SWP_BE.Services
                             appliedRuleId = rules["Bonus_HighRate"].RuleID;
                         }
                         break;
-                    case 2: // Sau sửa lần 2
+                    case 3: // Sau sửa lần 2
                         scoreDelta = rules["Penalty_Reject_2"].Value; // -5
                         reason = "Approve sau sửa lần 2";
                         appliedRuleId = rules["Penalty_Reject_2"].RuleID;
@@ -52,7 +52,7 @@ namespace SWP_BE.Services
                             reason += " (+2đ Bonus HighRate)";
                         }
                         break;
-                    case 3: // Sau sửa lần 3
+                    case 4: // Sau sửa lần 3
                         scoreDelta = rules["Penalty_Reject_3"].Value; // -10
                         reason = "Approve sau sửa lần 3";
                         appliedRuleId = rules["Penalty_Reject_3"].RuleID;
