@@ -157,28 +157,17 @@ namespace SWP_BE.Controllers
         }
 
         /// <summary> 
-        /// [Role: Manager] Chia nhỏ dữ liệu thành các Task (Phân lô dữ liệu). 
+        /// [Role: Manager] Lấy thông tin tổng quan (overview) của dự án để hiển thị Dashboard. 
         /// </summary>
-        /// <param name="id">ID dự án (Guid)</param>
-        /// <param name="dto">Cấu hình chia task</param>
-        /// <response code="200">Chia task thành công.</response>
-        /// <response code="400">Lỗi nghiệp vụ khi chia task.</response>
-        [HttpPost("{id}/split-tasks")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        public async Task<IActionResult> SplitTasks(Guid id, [FromBody] SplitTaskDto dto)
-        {
-            var managerId = GetManagerId();
-            try
-            {
-                var result = await _projectService.SplitTasksAsync(id, dto, managerId);
-                return result == null ? NotFound() : Ok(result);
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-        }
-
-
+        /// <remarks>
+        /// API này trả về dữ liệu tổng hợp bao gồm: thông tin dự án, danh sách nhãn (kèm màu sắc), danh sách các task, và thống kê tiến độ hoàn thành.
+        /// </remarks>
+        /// <param name="projectId">ID của dự án cần xem tổng quan (Guid)</param>
+        /// <response code="200">Trả về dữ liệu tổng quan của dự án.</response>
+        /// <response code="404">Dự án không tồn tại hoặc không thuộc quyền quản lý của bạn.</response>
         [HttpGet("{projectId}/overview")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> GetProjectOverview(Guid projectId)
         {
             var managerId = GetManagerId();
@@ -279,6 +268,50 @@ namespace SWP_BE.Controllers
             };
 
             return Ok(result);
+        }
+
+        [Authorize(Roles = "Manager")]
+        [HttpGet("disputes")]
+        public async Task<IActionResult> GetDisputes()
+        {
+            var disputes = await _context.Disputes
+                .Include(d => d.Task)
+                .Include(d => d.User)
+                .Where(d => d.Status == "Pending")
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
+
+            return Ok(disputes);
+        }
+
+        [Authorize(Roles = "Manager")]
+        [HttpPost("disputes/{id}/resolve")]
+        public async Task<IActionResult> ResolveDispute(Guid id, ResolveDisputeDto dto)
+        {
+            var dispute = await _context.Disputes
+                .Include(d => d.Task)
+                .FirstOrDefaultAsync(d => d.DisputeID == id);
+
+            if (dispute == null)
+                return NotFound("Dispute not found");
+
+            if (dispute.Status != "Pending")
+                return BadRequest("Dispute already resolved");
+
+            dispute.ManagerComment = dto.ManagerComment;
+            dispute.Status = dto.Approved ? "Approved" : "Rejected";
+            dispute.ResolvedAt = DateTime.UtcNow;
+
+            // Nếu Manager chấp nhận khiếu nại
+            if (dto.Approved)
+            {
+                dispute.Task.Status = SWP_BE.Models.Task.TaskStatus.Approved;
+                dispute.Task.CompletedAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok("Dispute resolved successfully");
         }
     }
 }

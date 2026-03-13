@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SWP_BE.Data;
@@ -11,9 +12,11 @@ using SWP_BE.Data;
 namespace SWP_BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260310140406_InitialSupabase")]
+    partial class InitialSupabase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -33,7 +36,7 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("PerformedBy")
                         .HasColumnType("uuid");
@@ -48,31 +51,6 @@ namespace SWP_BE.Migrations
                     b.HasIndex("TargetUserId");
 
                     b.ToTable("ActivityLogs");
-                });
-
-            modelBuilder.Entity("SWP_BE.Models.AnnotatorStat", b =>
-                {
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uuid");
-
-                    b.Property<double>("AvgCompletionHours")
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("CurrentPerfectStreak")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("FirstTryApprovedTasks")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TotalCompletedTasks")
-                        .HasColumnType("integer");
-
-                    b.Property<double>("TotalWorkingHours")
-                        .HasColumnType("double precision");
-
-                    b.HasKey("UserID");
-
-                    b.ToTable("AnnotatorStats");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
@@ -122,7 +100,7 @@ namespace SWP_BE.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ManagerComment")
                         .IsRequired()
@@ -133,7 +111,7 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("ResolvedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -161,7 +139,7 @@ namespace SWP_BE.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Format")
                         .IsRequired()
@@ -217,10 +195,10 @@ namespace SWP_BE.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("Deadline")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -292,7 +270,7 @@ namespace SWP_BE.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReputationLogID"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("NewScore")
                         .HasColumnType("integer");
@@ -351,7 +329,7 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Value")
                         .HasColumnType("integer");
@@ -368,7 +346,7 @@ namespace SWP_BE.Migrations
                             Description = "Hoàn thành ngay lần đầu (0 reject)",
                             IsActive = true,
                             RuleName = "Reward_Perfect",
-                            UpdatedAt = new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3823),
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8081),
                             Value = 20
                         },
                         new
@@ -378,7 +356,7 @@ namespace SWP_BE.Migrations
                             Description = "Thưởng thêm nếu RateComplete > 95%",
                             IsActive = true,
                             RuleName = "Bonus_HighRate",
-                            UpdatedAt = new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3838),
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8091),
                             Value = 2
                         },
                         new
@@ -388,7 +366,7 @@ namespace SWP_BE.Migrations
                             Description = "Trừ điểm khi Approve ở lần sửa 2",
                             IsActive = true,
                             RuleName = "Penalty_Reject_2",
-                            UpdatedAt = new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3839),
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8093),
                             Value = -5
                         },
                         new
@@ -398,7 +376,7 @@ namespace SWP_BE.Migrations
                             Description = "Trừ điểm khi Approve ở lần sửa 3",
                             IsActive = true,
                             RuleName = "Penalty_Reject_3",
-                            UpdatedAt = new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3841),
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8094),
                             Value = -10
                         },
                         new
@@ -408,7 +386,7 @@ namespace SWP_BE.Migrations
                             Description = "Task bị Fail (Reject lần 4)",
                             IsActive = true,
                             RuleName = "Penalty_Task_Fail",
-                            UpdatedAt = new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3842),
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8095),
                             Value = -20
                         },
                         new
@@ -418,7 +396,7 @@ namespace SWP_BE.Migrations
                             Description = "Ngưỡng >= 50đ",
                             IsActive = true,
                             RuleName = "High_Threshold",
-                            UpdatedAt = new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3843),
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8096),
                             Value = 50
                         },
                         new
@@ -428,7 +406,7 @@ namespace SWP_BE.Migrations
                             Description = "Ngưỡng 20 - 50đ",
                             IsActive = true,
                             RuleName = "Low_Threshold",
-                            UpdatedAt = new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3845),
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8097),
                             Value = 20
                         },
                         new
@@ -438,7 +416,7 @@ namespace SWP_BE.Migrations
                             Description = "Max 3 task",
                             IsActive = true,
                             RuleName = "Max_Task_High",
-                            UpdatedAt = new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3847),
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8098),
                             Value = 3
                         },
                         new
@@ -448,7 +426,7 @@ namespace SWP_BE.Migrations
                             Description = "Max 2 task",
                             IsActive = true,
                             RuleName = "Max_Task_Normal",
-                            UpdatedAt = new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3848),
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8099),
                             Value = 2
                         },
                         new
@@ -458,7 +436,7 @@ namespace SWP_BE.Migrations
                             Description = "Max 1 task",
                             IsActive = true,
                             RuleName = "Max_Task_Warning",
-                            UpdatedAt = new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3886),
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8100),
                             Value = 1
                         },
                         new
@@ -468,7 +446,7 @@ namespace SWP_BE.Migrations
                             Description = "Số task Fail liên tiếp để bị khóa tài khoản",
                             IsActive = true,
                             RuleName = "Max_Consecutive_Fails",
-                            UpdatedAt = new DateTime(2026, 3, 13, 1, 18, 25, 288, DateTimeKind.Local).AddTicks(3887),
+                            UpdatedAt = new DateTime(2026, 3, 10, 21, 4, 5, 866, DateTimeKind.Local).AddTicks(8101),
                             Value = 3
                         });
                 });
@@ -486,7 +464,7 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ErrorRegion")
                         .IsRequired()
@@ -519,7 +497,7 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("ReviewAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("ReviewerID")
                         .HasColumnType("uuid");
@@ -534,28 +512,6 @@ namespace SWP_BE.Migrations
                     b.HasIndex("TaskID");
 
                     b.ToTable("ReviewHistories");
-                });
-
-            modelBuilder.Entity("SWP_BE.Models.ReviewerStat", b =>
-                {
-                    b.Property<Guid>("UserID")
-                        .HasColumnType("uuid");
-
-                    b.Property<double>("AvgReviewHours")
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("DisputedTasks")
-                        .HasColumnType("integer");
-
-                    b.Property<double>("TotalReviewHours")
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("TotalReviewedTasks")
-                        .HasColumnType("integer");
-
-                    b.HasKey("UserID");
-
-                    b.ToTable("ReviewerStats");
                 });
 
             modelBuilder.Entity("SWP_BE.Models.SystemConfig", b =>
@@ -577,7 +533,7 @@ namespace SWP_BE.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Value")
                         .IsRequired()
@@ -603,7 +559,7 @@ namespace SWP_BE.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("EntityType")
                         .IsRequired()
@@ -633,25 +589,25 @@ namespace SWP_BE.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("CurrentRound")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("Deadline")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<double?>("FirstRate")
-                        .HasColumnType("double precision");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("ProjectID")
                         .HasColumnType("uuid");
 
                     b.Property<double>("RateComplete")
                         .HasColumnType("double precision");
+
+                    b.Property<int>("RejectCount")
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("ReviewerID")
                         .HasColumnType("uuid");
@@ -801,17 +757,6 @@ namespace SWP_BE.Migrations
                     b.Navigation("TargetUser");
                 });
 
-            modelBuilder.Entity("SWP_BE.Models.AnnotatorStat", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithOne("AnnotatorStat")
-                        .HasForeignKey("SWP_BE.Models.AnnotatorStat", "UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("SWP_BE.Models.DataItem", b =>
                 {
                     b.HasOne("SWP_BE.Models.Project", "Project")
@@ -946,17 +891,6 @@ namespace SWP_BE.Migrations
                     b.Navigation("Task");
                 });
 
-            modelBuilder.Entity("SWP_BE.Models.ReviewerStat", b =>
-                {
-                    b.HasOne("SWP_BE.Models.User", "User")
-                        .WithOne("ReviewerStat")
-                        .HasForeignKey("SWP_BE.Models.ReviewerStat", "UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("SWP_BE.Models.SystemConfig", b =>
                 {
                     b.HasOne("SWP_BE.Models.User", "Admin")
@@ -1055,15 +989,11 @@ namespace SWP_BE.Migrations
 
             modelBuilder.Entity("SWP_BE.Models.User", b =>
                 {
-                    b.Navigation("AnnotatorStat");
-
                     b.Navigation("AnnotatorTasks");
 
                     b.Navigation("ManagedProjects");
 
                     b.Navigation("ReputationLogs");
-
-                    b.Navigation("ReviewerStat");
 
                     b.Navigation("ReviewerTasks");
                 });

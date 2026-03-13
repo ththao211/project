@@ -2,6 +2,12 @@
 
 namespace SWP_BE.DTOs
 {
+
+    public class ResolveDisputeDto
+    {
+        public bool Approved { get; set; }
+        public string ManagerComment { get; set; }
+    }
     public class ExportRequest
     {
         public string Formats { get; set; }

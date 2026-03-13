@@ -22,18 +22,17 @@ namespace SWP_BE.Services
             string reason = "";
             int? appliedRuleId = null;
 
-            // --- LOGIC THEO BẢNG ĐIỂM CỦA BẠN ---
             // --- LOGIC TÍNH TOÁN ĐIỂM BIẾN ĐỘNG (scoreDelta) ---
             if (task.Status == Models.Task.TaskStatus.Approved)
             {
-                switch (task.RejectCount)
+                switch (task.CurrentRound)
                 {
-                    case 0: // Perfect
+                    case 1: // Perfect
                         scoreDelta = rules["Reward_Perfect"].Value; // +20
                         reason = "Perfect: Hoàn thành ngay từ đầu";
                         appliedRuleId = rules["Reward_Perfect"].RuleID;
                         break;
-                    case 1: // Sau sửa lần 1
+                    case 2: // Sau sửa lần 1
                         scoreDelta = 0;
                         reason = "Approve sau sửa lần 1";
                         if (task.RateComplete > 95)
@@ -43,7 +42,7 @@ namespace SWP_BE.Services
                             appliedRuleId = rules["Bonus_HighRate"].RuleID;
                         }
                         break;
-                    case 2: // Sau sửa lần 2
+                    case 3: // Sau sửa lần 2
                         scoreDelta = rules["Penalty_Reject_2"].Value; // -5
                         reason = "Approve sau sửa lần 2";
                         appliedRuleId = rules["Penalty_Reject_2"].RuleID;
@@ -53,7 +52,7 @@ namespace SWP_BE.Services
                             reason += " (+2đ Bonus HighRate)";
                         }
                         break;
-                    case 3: // Sau sửa lần 3
+                    case 4: // Sau sửa lần 3
                         scoreDelta = rules["Penalty_Reject_3"].Value; // -10
                         reason = "Approve sau sửa lần 3";
                         appliedRuleId = rules["Penalty_Reject_3"].RuleID;
@@ -75,10 +74,8 @@ namespace SWP_BE.Services
             if (newScore > 100) newScore = 100; // Chặn trên 100
             if (newScore < 0) newScore = 0;     // Chặn dưới 0
 
-            // Gán điểm mới cho User
             user.Score = newScore;
 
-            // Tính số điểm thực tế thay đổi sau khi đã chặn ngưỡng
             int actualChange = newScore - oldScore;
 
             // --- LƯU LOG VỚI SỐ ĐIỂM THỰC TẾ ---
@@ -87,7 +84,7 @@ namespace SWP_BE.Services
                 UserID = userId,
                 OldScore = oldScore,
                 NewScore = newScore,
-                ScoreChange = actualChange, // Lưu số điểm thực tế biến động
+                ScoreChange = actualChange,
                 Reason = reason,
                 TaskID = task.TaskID,
                 RuleID = appliedRuleId,
